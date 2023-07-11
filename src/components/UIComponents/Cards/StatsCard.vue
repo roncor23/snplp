@@ -13,8 +13,8 @@
         <div class="col-7 col-md-8">
           <slot name="content">
             <div class="numbers">
-              <p class="card-category">{{smallTitle}}</p>
-              <p class="card-title">{{title}}</p>
+              <p class="card-category" style="font-size: 12px">{{smallTitle}}</p>
+              <p class="card-title" style="font-size: 16px; font-weight: bold">{{title}}</p>
             </div>
           </slot>
         </div>

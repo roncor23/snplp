@@ -2,24 +2,79 @@
   <div>
     <!--Stats cards-->
     <div class="row">
-      <div class="col-lg-3 col-md-6 col-sm-6" v-for="stats in statsCards">
-        <stats-card :type="stats.type"
-                    :icon="stats.icon"
-                    :small-title="stats.title"
-                    :title="stats.value">
+      <div class="col-lg-2 col-md-6 col-sm-6">
+        <stats-card type="success"
+                    icon="nc-icon nc-globe"
+                    small-title="Total Principal Loan"
+                    :title="formatAmount(loan)">
           <div class="stats" slot="footer">
-            <i :class="stats.footerIcon"></i>
-            {{stats.footerText}}
+            <i class="nc-icon nc-refresh-69"></i>
+            Updated now
+          </div>
+        </stats-card>
+      </div>
+      <div class="col-lg-2 col-md-6 col-sm-6">
+        <stats-card type="warning"
+                    icon="nc-icon nc-paper"
+                    small-title="Total Interest"
+                    :title="formatAmount(interest)">
+          <div class="stats" slot="footer">
+            <i class="nc-icon nc-refresh-69"></i>
+            Updated now
+          </div>
+        </stats-card>
+      </div>
+      <div class="col-lg-2 col-md-6 col-sm-6">
+        <stats-card type="danger"
+                    icon="nc-icon nc-bank"
+                    small-title="Total Penalty"
+                    :title="formatAmount(penalty)">
+          <div class="stats" slot="footer">
+            <i class="nc-icon nc-refresh-69"></i>
+            Updated now
+          </div>
+        </stats-card>
+      </div>
+      <div class="col-lg-2 col-md-6 col-sm-6">
+        <stats-card type="success"
+                    icon="nc-icon nc-bulb-63"
+                    small-title="Total Full Amortization"
+                    :title="formatAmount(amortization)">
+          <div class="stats" slot="footer">
+            <i class="nc-icon nc-refresh-69"></i>
+            Updated now
+          </div>
+        </stats-card>
+      </div>
+      <div class="col-lg-2 col-md-6 col-sm-6">
+        <stats-card type="warning"
+                    icon="nc-icon nc-chart-pie-36"
+                    small-title="Total Amount Paid"
+                    :title="formatAmount(amount_paid)">
+          <div class="stats" slot="footer">
+            <i class="nc-icon nc-refresh-69"></i>
+            Updated now
+          </div>
+        </stats-card>
+      </div>
+      <div class="col-lg-2 col-md-6 col-sm-6">
+        <stats-card type="danger"
+                    icon="nc-icon nc-credit-card"
+                    small-title="Total Balance"
+                    :title="formatAmount(amortization - amount_paid)">
+          <div class="stats" slot="footer">
+            <i class="nc-icon nc-refresh-69"></i>
+            Updated now
           </div>
         </stats-card>
       </div>
     </div>
-    <div class="row">
+    <!-- <div class="row">
       <div class="col-lg-4 col-sm-6">
         <chart-card :chart-data="activeUsersChart.data"
                     chart-id="activity-chart"
                     chart-title="TOTAL EARNINGS IN LAST TEN QUARTERS">
-          <span slot="title">$34,657</span>
+          <span slot="title">34,657</span>
           <badge slot="title-label" type="success">+18%</badge>
 
           <template slot="footer-title">Financial Statistics</template>
@@ -59,7 +114,7 @@
           </p-button>
         </chart-card>
       </div>
-    </div>
+    </div> -->
 
     <!-- <div class="row">
       <div class="col-md-6">
@@ -184,6 +239,11 @@
      */
     data () {
       return {
+        amount_paid: '',
+        loan: '',
+        penalty: '',
+        interest: '',
+        amortization: '',
         statsCards: [
           {
             type: 'warning',
@@ -263,6 +323,100 @@
         }
 
       }
+    },
+    mounted() {
+      this.getTotalLoan();
+      this.getTotalInterest();
+      this.getTotalPenalty();
+      this.getTotalAmortization();
+      this.getTotalAmountPaid();
+    },
+    methods: {
+      getTotalLoan() {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/loan')
+                .then((response) => {
+                  this.loan = response.data.toString();
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+      },
+      getTotalAmountPaid() {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/amount_paid')
+                .then((response) => {
+                  this.amount_paid = response.data.toString();
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+      },
+      getTotalInterest() {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/interest')
+                .then((response) => {
+                  this.interest = response.data.toString();
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+      },
+      getTotalPenalty() {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/penalty')
+                .then((response) => {
+                  this.penalty = response.data.toString();
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+      },
+      getTotalAmortization() {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/amortization')
+                .then((response) => {
+                  this.amortization = response.data.toString();
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+      },
+       formatAmount(amount) {
+          // Convert the number to a string
+          let strAmount = amount.toString();
+
+          // Split the string into an array of characters
+          let chars = strAmount.split('');
+
+          // Reverse the array to make it easier to insert commas
+          chars.reverse();
+
+          // Iterate over the characters, inserting commas every 3 characters
+          for (let i = 3; i < chars.length; i += 4) {
+            chars.splice(i, 0, ',');
+          }
+
+          // Reverse the array back and join the characters into a string
+          let formattedAmount = chars.reverse().join('');
+
+          return formattedAmount;
+        }
     }
   }
 

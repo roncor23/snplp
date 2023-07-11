@@ -52,7 +52,8 @@ window.axios = axios;
 
 axios.defaults.withCredentials = true;
 
-axios.defaults.baseURL = 'http://snplp.chedcaraga.test/snplp-database/public/';
+// axios.defaults.baseURL = 'http://snplp.chedcaraga.test/snplp-database/public/';
+axios.defaults.baseURL = 'http://192.168.0.151/snplp-database/public/';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
 

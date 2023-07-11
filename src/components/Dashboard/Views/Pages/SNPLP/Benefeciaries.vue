@@ -3,8 +3,8 @@
       <div class="col-md-12">
         <div class="card">
           <div class="card-header">
-            <el-button type="primary" @click="showModal">Add Beneficiary</el-button>
-                <el-dialog :title="editMode ? 'Edit Beneficiary' : 'Add Beneficiary'" :visible.sync="modalVisible" @close="resetForm" width="95%">
+            <!-- <el-button type="primary" @click="showModal">Add Beneficiary</el-button> -->
+                <el-dialog title="Add Beneficiary" :visible.sync="modalVisible" width="95%">
                     <el-form ref="beneficiaryForm" :model="form" label-width="120">
                         <el-divider content-position="left">Personal Information</el-divider>
                         <el-form class="form-container">
@@ -52,7 +52,7 @@
                                 <div class="form-item">
                                     <label class="custom-label">Month & Year Graduated</label>
                                     <el-form-item required>
-                                        <el-input v-model="form.month_year_graduated"></el-input>
+                                        <el-input v-model="form.month_year_graduated" type="date"></el-input>
                                     </el-form-item>
                                 </div>
                                 <div class="form-item">
@@ -103,7 +103,7 @@
                                 <div class="form-item">
                                     <label class="custom-label">1st Date of Employment</label>
                                     <el-form-item required>
-                                        <el-input v-model="form.first_date_employment"></el-input>
+                                        <el-input v-model="form.first_date_employment" type="date"></el-input>
                                     </el-form-item>
                                 </div>
                                 <div class="form-item">
@@ -133,7 +133,7 @@
                                 <div class="form-item">
                                     <label class="custom-label">No. of Years Employed</label>
                                     <el-form-item>
-                                        <el-input v-model="form.no_years_emp"></el-input>
+                                        <el-input v-model="form.no_years_emp" type="number"></el-input>
                                     </el-form-item>
                                 </div>
                             </div>
@@ -220,13 +220,13 @@
                                 </div>
                             </div>
                         </el-form>
-                        <el-divider content-position="left">Repayments</el-divider>
+                        <!-- <el-divider content-position="left">Repayments</el-divider>
                         <el-form class="form-container">
                             <div class="form-row">
                                 <div class="form-item">
                                     <label class="custom-label">Date Paid</label>
                                     <el-form-item required>
-                                        <el-input v-model="form.date_paid"></el-input>
+                                        <el-input v-model="form.date_paid" type="date"></el-input>
                                     </el-form-item>
                                 </div>
                                 <div class="form-item">
@@ -254,13 +254,89 @@
                                     </el-form-item>
                                 </div>
                             </div>
-                        </el-form>
+                        </el-form> -->
                     </el-form>
 
                     <span slot="footer" class="dialog-footer">
                         <el-button @click="modalVisible = false">Cancel</el-button>
-                        <el-button type="primary" @click="updateBeneficiary" v-if="editMode">Update</el-button>
-                        <el-button type="primary" @click="addBeneficiary" v-else>Add</el-button>
+                        <el-button type="primary" @click="addBeneficiary">Add</el-button>
+                    </span>
+                </el-dialog>
+
+
+                <el-dialog title="Add Payment" :visible.sync="modalVisiblePayment" width="30%">
+                    <el-form ref="addPayment" :model="form" label-width="120">
+                        <el-form class="form-container">
+                            <div >
+                                <div>
+                                    <el-input v-model="payment.personal_id" hidden></el-input>
+
+                                    <label class="custom-label"><span class="text-danger">*</span>Date Paid</label>
+                                    <el-form-item required>
+                                        <el-input v-model="payment.date_paid" type="date"></el-input>
+                                    </el-form-item>
+                                </div>
+                                <div >
+                                    <label class="custom-label"><span class="text-danger">*</span>Amount Paid</label>
+                                    <el-form-item>
+                                        <el-input v-model="payment.amount_paid"></el-input>
+                                    </el-form-item>
+                                </div>
+                                <div >
+                                    <label class="custom-label"><span class="text-danger">*</span>Confirmation Number</label>
+                                    <el-form-item required>
+                                        <el-input v-model="payment.confirmation_number"></el-input>
+                                    </el-form-item>
+                                </div>
+
+                            </div>
+                        </el-form>
+                    </el-form>
+
+                    <span slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisiblePayment = false">Cancel</el-button>
+                        <el-button type="primary" @click="addPayment">Add</el-button>
+                    </span>
+                </el-dialog>
+
+                <el-dialog title="Payments" :visible.sync="modalVisiblePaymentTable" width="36%">
+                    <el-table :data="payments" v-if="!paymentFlag">
+                        <el-table-column width="150" property="date_paid" label="date paid"></el-table-column>
+                        <el-table-column width="150" property="amount_paid" label="amount paid" v-if="!paymentFlag"></el-table-column>
+                        <el-table-column width="250" property="confirmation_number" label="confirmation number"></el-table-column>
+                        <el-table-column width="100" label="action">                   
+                                <template slot-scope="scope">
+                                    <div class="button-container">
+                                    <el-button
+                                    size="mini"
+                                    @click="handlePaymentEdit(scope.row)" type="primary">
+                                    Edit
+                                </el-button>
+                                </div>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <table v-if="paymentFlag">
+                        <tr>
+                            <th>DATE PAID</th>
+                            <th>AMOUNT PAID</th>
+                            <th>CONFIRMATION NUMBER</th>
+                        </tr>
+                        <td>
+                            <input v-model="payment.date_paid"  class="form-control" disabled/>
+                        </td>
+                        <td>
+                            <input v-model="payment.amount_paid"  class="form-control"/>
+                        </td>
+                        <td>
+                            <input v-model="payment.confirmation_number"  class="form-control"/>
+                        </td>
+                    </table>
+                    <span slot="footer" class="dialog-footer">
+                        <p class="text-left font-weight-bold">TOTAL AMOUNT PAID: <span>{{ formatNumberWithCommas(total_amount_paid + Number(re_total_amount_paid)) }}</span></p>
+                        <el-button @click="modalVisiblePaymentTable = false, paymentFlag = false" v-if="!paymentFlag">Close</el-button>
+                        <el-button @click="paymentFlag = false" v-if="paymentFlag">Back</el-button>
+                        <el-button type="primary" @click="updatePayment">Update</el-button>
                     </span>
                 </el-dialog>
           </div>
@@ -298,12 +374,12 @@
                 <el-table-column label="Total Amount Paid" property="repayment_info.total_amount_paid" width="200"></el-table-column>
                 <el-table-column label="Outstanding Balance" width="250">
                     <template slot-scope="scope">
-                        {{ scope.row.disbursement_info.total_full_amortization - scope.row.repayment_info.total_amount_paid }}
+                        {{ scope.row.repayment_info.outstanding_balance }}
                     </template>
                 </el-table-column>
                 <el-table-column
                     label="Actions"
-                    width="200"
+                    width="370"
                     fixed="right"
                 >
                     <template slot="header" slot-scope="scope">
@@ -317,22 +393,51 @@
                             <el-button
                             size="mini"
                             @click="handleEdit(scope.row)" type="primary">Edit</el-button>
-                            <!-- <el-button
+                            <el-button
                             size="mini"
-                            type="danger"
-                            @click="handleDelete(scope.row)">Delete</el-button> -->
+                            type="success"
+                            @click="addPayments(scope.row)">Add Payment</el-button>
+                            <el-button
+                            size="mini"
+                            type="info"
+                            @click="viewPayment(scope.row)">View Payment</el-button>
+                            <!-- <el-popover
+                            placement="right"
+                            width="720"
+                            transition="el-fade-in-linear"
+                            trigger="click"
+                            >
+                                <el-table :data="payments">
+                                    <el-table-column width="150" property="date_paid" label="date paid"></el-table-column>
+                                    <el-table-column width="150" property="amount_paid" label="amount paid"></el-table-column>
+                                    <el-table-column width="250" property="confirmation_number" label="confirmation number"></el-table-column>
+                                    <el-table-column width="100" label="action">                   
+                                         <template slot-scope="scope">
+                                             <div class="button-container">
+                                                <el-button
+                                                size="mini"
+                                                @click="handleEdit(scope.row)" type="primary">
+                                                Edit
+                                            </el-button>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                <el-button type="info" slot="reference" size="mini" class="ml-2" @click="viewPayment(scope.row)">View Payment</el-button>
+                            </el-popover> -->
                         </div>
+
 
                     </template>
                 </el-table-column>
             </el-table>
-            <el-pagination
+            <!-- <el-pagination
                 background
                 layout="prev, pager, next"
-                :total="totalItems"
+                :total="filteredTableData.length"
                 :page-size="pageSize"
                 @current-change="handlePaginationChange"
-            ></el-pagination>
+            ></el-pagination> -->
           </div>
         </div>
       </div>
@@ -341,7 +446,7 @@
 </template>
 <script>
   import Vue from 'vue'
-  import {Table, TableColumn, Select, Button, Dialog, Form, FormItem, Input, Divider, Pagination  } from 'element-ui'
+  import {Table, TableColumn, Select, Button, Dialog, Form, FormItem, Input, Divider, Pagination, Popover  } from 'element-ui'
   import 'element-ui/lib/theme-chalk/dialog.css';
   import 'element-ui/lib/theme-chalk/form.css';
   import 'element-ui/lib/theme-chalk/form-item.css';
@@ -359,15 +464,17 @@
   Vue.component(Input.name, Input);
   Vue.component(Divider.name, Divider);
   Vue.component('el-pagination', Pagination);
+  Vue.component(Popover.name, Popover);
+
   export default {
     data () {
       return {
-        editMode: false,
-        totalItems: 4,
+        totalItems: 866,
         currentPage: 1, // Current page
-        pageSize: 4, // Number of items per page
-        search: '',
+        pageSize: 10, // Number of items per page
         modalVisible: false,
+        modalVisiblePayment: false,
+        modalVisiblePaymentTable: false,
         form: {
             last_name: '',
             maiden_name: '',
@@ -405,7 +512,18 @@
 
             benefeciaryId: ''
         },
-        tableData: []
+        payment: {
+            personal_id: '',
+            date_paid: '',
+            amount_paid: '',
+            confirmation_number: ''
+        },
+        tableData: [],
+        search: '',
+        payments: [],
+        paymentFlag: false,
+        total_amount_paid: '',
+        re_total_amount_paid: ''
       }
     },
     computed: {
@@ -414,11 +532,11 @@
             if (!search) {
                 return tableData;
             } else {
-                const searchLower = search.toLowerCase();
+                const searchUpper = search.toUpperCase();
                 return tableData.filter(
                 (data) =>
-                    data.last_name.toLowerCase().includes(searchLower) ||
-                    data.first_name.toLowerCase().includes(searchLower)
+                    data.last_name.toUpperCase().includes(searchUpper) ||
+                    data.first_name.toUpperCase().includes(searchUpper)
                 );
             }
         },
@@ -430,12 +548,28 @@
         handlePaginationChange(page) {
             this.currentPage = page;
         },
-        showModal() {
-            this.modalVisible = true;
-        },
-        resetForm() {
-            // this.form = {};
-        },
+        formatNumberWithCommas(number) {
+            // Convert the number to a string
+            var numberString = number.toString();
+
+            // Split the number string into an array of characters
+            var numberArray = numberString.split('');
+
+            // Determine the position to start adding commas
+            var commaPosition = numberArray.length - 3;
+
+            // Iterate over the number array in reverse order and add commas every three digits
+            while (commaPosition > 0) {
+                numberArray.splice(commaPosition, 0, ',');
+                commaPosition -= 3;
+            }
+
+            // Join the number array back into a string
+            var formattedNumber = numberArray.join('');
+
+            // Return the formatted number
+            return formattedNumber;
+            },
         async updateBeneficiary() {
             
             await axios
@@ -474,6 +608,25 @@
             // After successful addition, close the modal and reset the form
             this.modalVisible = false;
         },
+        async addPayment() {
+            await axios
+                .post('api/payment', this.payment)
+                .then((response) => {
+                    this.$notify({
+                        message: 'Payment successfully added!',
+                        type: 'success',
+                    });
+                    this.payment = {};
+                    // this.getBeneficiaries();
+                })
+                .catch((response) => {
+                console.log(response);
+                alert('Something went wrong!');
+                });
+
+            // After successful addition, close the modal and reset the form
+            this.modalVisiblePayment = false;
+        },
         getBeneficiaries() {
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
             axios
@@ -488,16 +641,74 @@
 
             // After successful addition, close the modal and reset the form
             this.modalVisible = false;
-            this.resetForm();
+        },
+        async getPaymentsPerBeneficiary(id) {
+
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            await axios
+                .get('api/payment/' + id)
+                .then((response) => {
+                    this.payments = response.data.data;
+
+                    let len = this.payments.length;
+                    let sum = 0;
+                    for(let i = 0; i < len; i++) {
+                        sum += Number(this.payments[i].amount_paid);
+                    }
+                    this.total_amount_paid = sum;
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+            // After successful addition, close the modal and reset the form
+            this.modalVisible = false;
         },
         handleEdit(beneficiary) {
             this.handleForm(beneficiary);
 
-          
             this.benefeciaryId = beneficiary.id;
-            this.editMode = true;
 
             this.modalVisible = true;
+        },
+        handlePaymentEdit(payment) {
+
+            this.handleFormPayment(payment);
+
+            this.paymentFlag = true;
+        },
+       async updatePayment() {
+            await axios
+                .post('api/payment/' + this.payment.personal_id, this.payment)
+                .then((response) => {
+                    this.$notify({
+                        message: 'Payment successfully updated!',
+                        type: 'success',
+                    });
+                    this.getPaymentsPerBeneficiary(this.payment.personal_id); 
+                    this.paymentFlag = false;
+                })
+                .catch((response) => {
+                console.log(response);
+                alert('Something went wrong!');
+                });
+        },
+
+        addPayments(beneficiary) {
+            this.modalVisiblePayment = true;
+            this.payment.personal_id = beneficiary.id;
+        },
+        viewPayment(beneficiary) {
+            this.getPaymentsPerBeneficiary(beneficiary.id);
+            this.modalVisiblePaymentTable = true;
+            this.re_total_amount_paid = beneficiary.repayment_info.total_amount_paid;
+        },
+        handleFormPayment(payment) {
+            this.payment.personal_id = payment.personal_id;
+            this.payment.date_paid = payment.date_paid;
+            this.payment.amount_paid = payment.amount_paid;
+            this.payment.confirmation_number = payment.confirmation_number;
         },
         handleForm(beneficiary) {
             this.form.last_name = beneficiary.last_name;

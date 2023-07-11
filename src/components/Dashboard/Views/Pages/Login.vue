@@ -87,7 +87,7 @@ export default {
         // handle login
         console.log("check sanctum", response);
         axios
-          .post('http://snplp.chedcaraga.test/snplp-database/public/api/login', {
+          .post('http://192.168.0.151/snplp-database/public/api/login', {
             email: this.email,
             password: this.password,
           })

@@ -77,6 +77,8 @@ export default {
       console.log("check auth", this.$store.getters.getUser.isAuthenticated);
       if(this.$store.getters.getUser.isAuthenticated) {
         this.$router.push({ path: '/admin/overview' });
+      } else {
+        this.$router.push({ path: '/login' });
       }
     },
     toggleSidebar() {
