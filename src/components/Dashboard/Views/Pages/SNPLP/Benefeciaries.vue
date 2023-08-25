@@ -4,7 +4,7 @@
         <div class="card">
           <div class="card-header">
             <!-- <el-button type="primary" @click="showModal">Add Beneficiary</el-button> -->
-                <el-dialog title="Add Beneficiary" :visible.sync="modalVisible" width="95%">
+                <el-dialog title="Update Beneficiary" :visible.sync="modalVisible" width="95%">
                     <el-form ref="beneficiaryForm" :model="form" label-width="120">
                         <el-divider content-position="left">Personal Information</el-divider>
                         <el-form class="form-container">
@@ -259,7 +259,7 @@
 
                     <span slot="footer" class="dialog-footer">
                         <el-button @click="modalVisible = false">Cancel</el-button>
-                        <el-button type="primary" @click="addBeneficiary">Add</el-button>
+                        <el-button type="primary" @click="updateBeneficiary">Update</el-button>
                     </span>
                 </el-dialog>
 
@@ -341,7 +341,7 @@
                 </el-dialog>
           </div>
           <div class="card-body table-responsive table-full-width">
-            <el-table :data="filteredTableData" style="width: 100%;" border>
+            <el-table v-loading="loading" element-loading-text="Loading data..." :data="filteredTableData" style="width: 100%;" :lazy="true" border>
                 <!-- <el-table-column label="Id" property="id" width="50"></el-table-column> -->
                 <el-table-column label="Last Name" property="last_name" width="200" fixed="left"></el-table-column>
                 <el-table-column label="Maiden Name" property="maiden_name" width="200"></el-table-column>
@@ -523,7 +523,8 @@
         payments: [],
         paymentFlag: false,
         total_amount_paid: '',
-        re_total_amount_paid: ''
+        re_total_amount_paid: '',
+        loading: false
       }
     },
     computed: {
@@ -628,11 +629,13 @@
             this.modalVisiblePayment = false;
         },
         getBeneficiaries() {
+            this.loading = true;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
             axios
                 .get('api/data')
                 .then((response) => {
                     this.tableData = response.data.data;
+                    this.loading = false;
                 })
                 .catch((response) => {
                     console.log(response);
