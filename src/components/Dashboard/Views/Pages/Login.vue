@@ -83,11 +83,12 @@ export default {
       }
     },
     async login() {
-      axios.get('/sanctum/csrf-cookie').then((response) => {
+      // axios.get('/sanctum/csrf-cookie').then((response) => {
         // handle login
-        console.log("check sanctum", response);
+        // console.log("check sanctum", response);
         axios
-          .post('http://192.168.0.151/snplp-database/public/api/login', {
+          // .post('http://192.168.0.151/snplp-database/public/api/login', {
+          .post('api/login', {
             email: this.email,
             password: this.password,
           })
@@ -107,7 +108,7 @@ export default {
               type: 'danger',
             });          
           });
-      });
+      // });
     }
   },
   beforeDestroy() {

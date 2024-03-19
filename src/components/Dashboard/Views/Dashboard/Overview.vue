@@ -143,7 +143,7 @@
       </div>
     </div> -->
 
-    <div class="row">
+    <!-- <div class="row">
       <div class="col-lg-3 col-sm-6">
         <circle-chart-card :percentage="70"
                            chart-id="email-statistics-chart"
@@ -214,7 +214,7 @@
           </template>
         </circle-chart-card>
       </div>
-    </div>
+    </div> -->
 
   </div>
 </template>

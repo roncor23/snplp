@@ -333,10 +333,12 @@
                         </td>
                     </table>
                     <span slot="footer" class="dialog-footer">
+                        <p class="text-left font-weight-bold">TOTAL FULL AMORTIZATION: <span>{{ formatNumberWithCommas(outstanding_blance) }}</span></p>
                         <p class="text-left font-weight-bold">TOTAL AMOUNT PAID: <span>{{ formatNumberWithCommas(total_amount_paid + Number(re_total_amount_paid)) }}</span></p>
+                        <p class="text-left font-weight-bold">OUTSTANDING BALANCE: <span v-if="outstanding_blance > 0">{{ (formatNumberWithCommas(outstanding_blance - Number(re_total_amount_paid) - Number(total_amount_paid))) }}</span></p>
                         <el-button @click="modalVisiblePaymentTable = false, paymentFlag = false" v-if="!paymentFlag">Close</el-button>
                         <el-button @click="paymentFlag = false" v-if="paymentFlag">Back</el-button>
-                        <el-button type="primary" @click="updatePayment">Update</el-button>
+                        <el-button type="primary" @click="updatePayment" v-if="paymentFlag">Update</el-button>
                     </span>
                 </el-dialog>
           </div>
@@ -431,13 +433,13 @@
                     </template>
                 </el-table-column>
             </el-table>
-            <!-- <el-pagination
+            <el-pagination
                 background
                 layout="prev, pager, next"
-                :total="filteredTableData.length"
+                :total="totalPage"
                 :page-size="pageSize"
                 @current-change="handlePaginationChange"
-            ></el-pagination> -->
+            ></el-pagination>
           </div>
         </div>
       </div>
@@ -513,7 +515,7 @@
             benefeciaryId: ''
         },
         payment: {
-            personal_id: '',
+            id: '',
             date_paid: '',
             amount_paid: '',
             confirmation_number: ''
@@ -524,7 +526,9 @@
         paymentFlag: false,
         total_amount_paid: '',
         re_total_amount_paid: '',
-        loading: false
+        outstanding_blance: '',
+        loading: false,
+        totalPage: 0,
       }
     },
     computed: {
@@ -543,11 +547,11 @@
         },
     },
     mounted() {
-        this.getBeneficiaries();
+        this.getBeneficiaries(this.currentPage);
     },
     methods: {
         handlePaginationChange(page) {
-            this.currentPage = page;
+            this.getBeneficiaries(page);
         },
         formatNumberWithCommas(number) {
             // Convert the number to a string
@@ -580,7 +584,7 @@
                         message: 'Benefeciary successfully updated!',
                         type: 'success',
                     });
-                    this.getBeneficiaries();
+                    this.getBeneficiaries(this.currentPage);
                 })
                 .catch((response) => {
                 console.log(response);
@@ -599,7 +603,7 @@
                         type: 'success',
                     });
                     this.form = {};
-                    this.getBeneficiaries();
+                    this.getBeneficiaries(this.currentPage);
                 })
                 .catch((response) => {
                 console.log(response);
@@ -628,13 +632,15 @@
             // After successful addition, close the modal and reset the form
             this.modalVisiblePayment = false;
         },
-        getBeneficiaries() {
+        getBeneficiaries(page) {
             this.loading = true;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
             axios
-                .get('api/data')
+                .get('api/data/' + page)
                 .then((response) => {
                     this.tableData = response.data.data;
+                    this.totalPage = response.data.meta.total;
+                    console.log("check tableData", this.tableData);
                     this.loading = false;
                 })
                 .catch((response) => {
@@ -683,7 +689,7 @@
         },
        async updatePayment() {
             await axios
-                .post('api/payment/' + this.payment.personal_id, this.payment)
+                .post('api/payment/' + this.payment.id, this.payment)
                 .then((response) => {
                     this.$notify({
                         message: 'Payment successfully updated!',
@@ -691,6 +697,7 @@
                     });
                     this.getPaymentsPerBeneficiary(this.payment.personal_id); 
                     this.paymentFlag = false;
+                    this.payment = {};
                 })
                 .catch((response) => {
                 console.log(response);
@@ -706,8 +713,11 @@
             this.getPaymentsPerBeneficiary(beneficiary.id);
             this.modalVisiblePaymentTable = true;
             this.re_total_amount_paid = beneficiary.repayment_info.total_amount_paid;
+            this.outstanding_blance = beneficiary.disbursement_info.total_full_amortization;
+            console.log("check bne", beneficiary);
         },
         handleFormPayment(payment) {
+            this.payment.id = payment.id;
             this.payment.personal_id = payment.personal_id;
             this.payment.date_paid = payment.date_paid;
             this.payment.amount_paid = payment.amount_paid;
