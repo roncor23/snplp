@@ -343,6 +343,19 @@
                 </el-dialog>
           </div>
           <div class="card-body table-responsive table-full-width">
+            <div class="row"> 
+                <div class="ml-4 mb-4 col-md-2"> 
+                    <el-dropdown size="small" split-button type="primary" @command="fetchStatus">
+                        <span class="el-dropdown-link">Status</span>
+                        <el-dropdown-menu slot="dropdown">
+                            <el-dropdown-item command="1">Paid</el-dropdown-item>
+                            <el-dropdown-item command="0">Unpaid</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                </div>
+            </div>
+
+
             <el-table v-loading="loading" element-loading-text="Loading data..." :data="filteredTableData" style="width: 100%;" :lazy="true" border>
                 <!-- <el-table-column label="Id" property="id" width="50"></el-table-column> -->
                 <el-table-column label="Last Name" property="last_name" width="200" fixed="left"></el-table-column>
@@ -448,13 +461,16 @@
 </template>
 <script>
   import Vue from 'vue'
-  import {Table, TableColumn, Select, Button, Dialog, Form, FormItem, Input, Divider, Pagination, Popover  } from 'element-ui'
+  import {Table, TableColumn, Select, Button, Dialog, Form, FormItem, Input, Divider, Pagination, Popover, Dropdown, DropdownMenu, DropdownItem  } from 'element-ui'
   import 'element-ui/lib/theme-chalk/dialog.css';
   import 'element-ui/lib/theme-chalk/form.css';
   import 'element-ui/lib/theme-chalk/form-item.css';
   import 'element-ui/lib/theme-chalk/input.css';
   import 'element-ui/lib/theme-chalk/divider.css';
   import 'element-ui/lib/theme-chalk/pagination.css';
+  import 'element-ui/lib/theme-chalk/dropdown.css';
+  import 'element-ui/lib/theme-chalk/dropdown-menu.css';
+  import 'element-ui/lib/theme-chalk/dropdown-item.css';
 
   Vue.use(Table)
   Vue.use(TableColumn)
@@ -467,6 +483,9 @@
   Vue.component(Divider.name, Divider);
   Vue.component('el-pagination', Pagination);
   Vue.component(Popover.name, Popover);
+  Vue.component(Dropdown.name, Dropdown);
+  Vue.component(DropdownMenu.name, DropdownMenu);
+  Vue.component(DropdownItem.name, DropdownItem);
 
   export default {
     data () {
@@ -474,6 +493,7 @@
         totalItems: 866,
         currentPage: 1, // Current page
         pageSize: 10, // Number of items per page
+        dropVal: 2,
         modalVisible: false,
         modalVisiblePayment: false,
         modalVisiblePaymentTable: false,
@@ -550,8 +570,36 @@
         this.getBeneficiaries(this.currentPage);
     },
     methods: {
+        fetchStatus(val, page) {
+            page = this.currentPage;
+            this.loading = true;
+            this.dropVal = val;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/status-data/' + Number(val) + '/' + Number(page))
+                .then((response) => {
+                    this.tableData = response.data.data;
+                    this.totalPage = response.data.meta.total;
+                    console.log("check tableData", this.tableData);
+                    this.loading = false;
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+            // After successful addition, close the modal and reset the form
+            this.modalVisible = false;
+        },
         handlePaginationChange(page) {
-            this.getBeneficiaries(page);
+            this.currentPage = page;
+            if(this.dropVal == 1 || this.dropVal == 0) {
+                this.fetchStatus(this.dropVal, page);
+                return;
+            } else {
+                this.getBeneficiaries(page);
+            }
+           
         },
         formatNumberWithCommas(number) {
             // Convert the number to a string
