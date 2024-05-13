@@ -333,7 +333,7 @@
                         </td>
                     </table>
                     <span slot="footer" class="dialog-footer">
-                        <p class="text-left font-weight-bold">TOTAL FULL AMORTIZATION: <span>{{ formatNumberWithCommas(outstanding_blance) }}</span></p>
+                        <p class="text-left font-weight-bold">TOTAL PAYABLE: <span>{{ formatNumberWithCommas(outstanding_blance) }}</span></p>
                         <p class="text-left font-weight-bold">TOTAL AMOUNT PAID: <span>{{ formatNumberWithCommas(total_amount_paid + Number(re_total_amount_paid)) }}</span></p>
                         <p class="text-left font-weight-bold">OUTSTANDING BALANCE: <span v-if="outstanding_blance > 0">{{ (formatNumberWithCommas(outstanding_blance - Number(re_total_amount_paid) - Number(total_amount_paid))) }}</span></p>
                         <el-button @click="modalVisiblePaymentTable = false, paymentFlag = false" v-if="!paymentFlag">Close</el-button>
@@ -344,12 +344,19 @@
           </div>
           <div class="card-body table-responsive table-full-width">
             <div class="row"> 
-                <div class="ml-4 mb-4 col-md-2"> 
-                    <el-dropdown size="small" split-button type="primary" @command="fetchStatus">
-                        <span class="el-dropdown-link">Status</span>
+
+                <div class="col-md-4 text-left ml-4"> 
+                    <p v-if="beneficiariesCount"><span class="font-weight-bold">Total Beneficiaries:</span> {{ beneficiariesCount }}</p>
+                    <p v-if="totalAmountPaid"><span class="font-weight-bold">Total Amount Paid:</span> {{ formatAmount(totalAmountPaid) }}</p>
+                    <p v-if="totalBalance"><span class="font-weight-bold">Total Outstanding Blance:</span> {{ formatAmount(totalBalance) }}</p>
+                </div>
+                <div class="mb-4 col-md-7 text-right ml-4"> 
+                    <el-dropdown size="small" split-button type="primary" @command="handleCommandChange">
+                        <span class="el-dropdown-link">{{ selectedStatus }}</span>
                         <el-dropdown-menu slot="dropdown">
-                            <el-dropdown-item command="1">Paid</el-dropdown-item>
-                            <el-dropdown-item command="0">Unpaid</el-dropdown-item>
+                            <el-dropdown-item command="1">Fully Paid</el-dropdown-item>
+                            <el-dropdown-item command="0">Partially Paid</el-dropdown-item>
+                            <el-dropdown-item command="2">No Payment</el-dropdown-item>
                         </el-dropdown-menu>
                     </el-dropdown>
                 </div>
@@ -490,6 +497,10 @@
   export default {
     data () {
       return {
+        selectedStatus: 'Status',
+        totalAmountPaid: '',
+        totalBalance: '',
+        beneficiariesCount: '',
         totalItems: 866,
         currentPage: 1, // Current page
         pageSize: 10, // Number of items per page
@@ -570,6 +581,30 @@
         this.getBeneficiaries(this.currentPage);
     },
     methods: {
+        handleCommandChange(command) {
+            switch (command) {
+                case '1':
+                this.selectedStatus = 'Fully Paid';
+                this.fetchStatus(command);
+                break;
+                case '0':
+                this.selectedStatus = 'Partially Paid';
+                this.fetchStatus(command);
+                break;
+                case '2':
+                this.selectedStatus = 'No Payment';
+                this.fetchStatus(command);
+                break;
+                default:
+                this.selectedStatus = 'Status'; // Default status text
+            }
+        },
+        formatAmount(amount) {
+            let num_parts = amount.toString().split(".");
+            num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+            return num_parts.join(".");
+        },
         fetchStatus(val, page) {
             page = this.currentPage;
             this.loading = true;
@@ -580,6 +615,9 @@
                 .then((response) => {
                     this.tableData = response.data.data;
                     this.totalPage = response.data.meta.total;
+                    this.totalAmountPaid = response.data.totalSumPaid;
+                    this.totalBalance = response.data.totalSumBalance;
+                    this.beneficiariesCount = response.data.beneficiariesCount;
                     console.log("check tableData", this.tableData);
                     this.loading = false;
                 })
