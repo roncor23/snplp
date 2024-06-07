@@ -220,50 +220,12 @@
                                 </div>
                             </div>
                         </el-form>
-                        <!-- <el-divider content-position="left">Repayments</el-divider>
-                        <el-form class="form-container">
-                            <div class="form-row">
-                                <div class="form-item">
-                                    <label class="custom-label">Date Paid</label>
-                                    <el-form-item required>
-                                        <el-input v-model="form.date_paid" type="date"></el-input>
-                                    </el-form-item>
-                                </div>
-                                <div class="form-item">
-                                    <label class="custom-label">Amount Paid</label>
-                                    <el-form-item>
-                                        <el-input v-model="form.amount_paid"></el-input>
-                                    </el-form-item>
-                                </div>
-                                <div class="form-item">
-                                    <label class="custom-label">Confirmation Number</label>
-                                    <el-form-item required>
-                                        <el-input v-model="form.confirmation_number"></el-input>
-                                    </el-form-item>
-                                </div>
-                                <div class="form-item">
-                                    <label class="custom-label"><span class="text-danger">*</span>Total Amount Paid</label>
-                                    <el-form-item>
-                                        <el-input v-model="form.total_amount_paid"></el-input>
-                                    </el-form-item>
-                                </div>
-                                <div class="form-item">
-                                    <label class="custom-label"></label>
-                                    <el-form-item>
-                                        <el-input hidden></el-input>
-                                    </el-form-item>
-                                </div>
-                            </div>
-                        </el-form> -->
                     </el-form>
-
                     <span slot="footer" class="dialog-footer">
                         <el-button @click="modalVisible = false">Cancel</el-button>
                         <el-button type="primary" @click="updateBeneficiary">Update</el-button>
                     </span>
                 </el-dialog>
-
-
                 <el-dialog title="Add Payment" :visible.sync="modalVisiblePayment" width="30%">
                     <el-form ref="addPayment" :model="form" label-width="120">
                         <el-form class="form-container">
@@ -288,31 +250,68 @@
                                         <el-input v-model="payment.confirmation_number"></el-input>
                                     </el-form-item>
                                 </div>
-
                             </div>
                         </el-form>
                     </el-form>
-
                     <span slot="footer" class="dialog-footer">
                         <el-button @click="modalVisiblePayment = false">Cancel</el-button>
                         <el-button type="primary" @click="addPayment">Add</el-button>
                     </span>
                 </el-dialog>
+                <el-dialog title="Add Status" :visible.sync="modalVisibleStatuses" width="30%">
+                    <el-form ref="addStatuses" :model="form" label-width="120">
+                        <el-form class="form-container">
+                            <div >
+                                <div>
+                                    <el-input v-model="status.personal_id" hidden></el-input>
 
-                <el-dialog title="Payments" :visible.sync="modalVisiblePaymentTable" width="36%">
+                                    <label class="custom-label"><span class="text-danger">*</span>Date</label>
+                                    <el-form-item required>
+                                        <el-input v-model="status.date" type="date"></el-input>
+                                    </el-form-item>
+                                </div>
+                                <div >
+                                    <label class="custom-label"><span class="text-danger">*</span>Action Taken</label>
+                                    <el-form-item>
+                                        <el-input v-model="status.action_taken" type="textarea"></el-input>
+                                    </el-form-item>
+                                </div>
+
+                            </div>
+                        </el-form>
+                    </el-form>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleStatuses = false">Cancel</el-button>
+                        <el-button type="primary" @click="addStatus">Add</el-button>
+                    </span>
+                </el-dialog>
+                <el-dialog title="Payments" :visible.sync="modalVisiblePaymentTable" width="32%">
                     <el-table :data="payments" v-if="!paymentFlag">
                         <el-table-column width="150" property="date_paid" label="date paid"></el-table-column>
-                        <el-table-column width="150" property="amount_paid" label="amount paid" v-if="!paymentFlag"></el-table-column>
-                        <el-table-column width="250" property="confirmation_number" label="confirmation number"></el-table-column>
-                        <el-table-column width="100" label="action">                   
+                        <el-table-column width="150" label="amount paid" v-if="!paymentFlag">
+                            <template v-slot="{row}"> 
+                                <p class="text-right">{{ addComma(row.amount_paid) }}</p>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="250" label="confirmation number">
+                            <template v-slot="{row}"> 
+                                <p class="text-center">{{ row.confirmation_number }}</p>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="170" label="action">                   
                                 <template slot-scope="scope">
                                     <div class="button-container">
-                                    <el-button
-                                    size="mini"
-                                    @click="handlePaymentEdit(scope.row)" type="primary">
-                                    Edit
-                                </el-button>
-                                </div>
+                                        <el-button
+                                            size="mini"
+                                            @click="handlePaymentEdit(scope.row)" type="primary">
+                                            Edit
+                                        </el-button>
+                                        <el-button
+                                            size="mini"
+                                            @click="deletePayment(scope.row)" type="danger">
+                                            Delete
+                                        </el-button>
+                                    </div>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -341,8 +340,54 @@
                         <el-button type="primary" @click="updatePayment" v-if="paymentFlag">Update</el-button>
                     </span>
                 </el-dialog>
+
+                <el-dialog title="Status" :visible.sync="modalVisibleStatusTable" width="40%">
+                    <el-table :data="statuses" v-if="!statusFlag">
+                        <el-table-column width="150" property="date" label="date"></el-table-column>
+                        <el-table-column width="450" property="action_taken" label="action taken"></el-table-column>
+                        <el-table-column width="150" property="encoded_by" label="encoded by"></el-table-column>
+                        <el-table-column width="170" label="action">                   
+                                <template slot-scope="scope">
+                                    <div class="button-container">
+                                        <el-button
+                                            size="mini"
+                                            @click="handleStatusEdit(scope.row)" type="primary">
+                                            Edit
+                                        </el-button>
+                                        <el-button
+                                            size="mini"
+                                            @click="deleteStatus(scope.row)" type="danger">
+                                            Delete
+                                        </el-button>
+                                    </div>
+                            </template>
+                        </el-table-column>
+                        
+                    </el-table>
+                    <table v-if="statusFlag">
+                        <tr>
+                            <th>DATE</th>
+                            <th>ACTION TAKEN</th>
+                            <th>ENCODED BY</th>
+                        </tr>
+                        <td>
+                            <input v-model="status.date"  class="form-control" disabled/>
+                        </td>
+                        <td>
+                            <input v-model="status.action_taken"  class="form-control"/>
+                        </td>
+                        <td>
+                            <input v-model="status.encoded_by"  class="form-control" disabled/>
+                        </td>
+                    </table>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleStatusTable = false, statusFlag = false" v-if="!statusFlag">Close</el-button>
+                        <el-button @click="statusFlag = false" v-if="statusFlag">Back</el-button>
+                        <el-button type="primary" @click="updateStatus" v-if="statusFlag">Update</el-button>
+                    </span>
+                </el-dialog>
           </div>
-          <div class="card-body table-responsive table-full-width">
+          <div class="card-body">
             <div class="row"> 
 
                 <div class="col-md-4 text-left ml-4"> 
@@ -351,7 +396,7 @@
                     <p v-if="totalBalance"><span class="font-weight-bold">Total Outstanding Blance:</span> {{ formatAmount(totalBalance) }}</p>
                 </div>
                 <div class="mb-4 col-md-7 text-right ml-4"> 
-                    <el-dropdown size="small" split-button type="primary" @command="handleCommandChange">
+                    <el-dropdown size="small" split-button type="info" @command="handleCommandChange">
                         <span class="el-dropdown-link">{{ selectedStatus }}</span>
                         <el-dropdown-menu slot="dropdown">
                             <el-dropdown-item command="1">Fully Paid</el-dropdown-item>
@@ -361,21 +406,43 @@
                     </el-dropdown>
                 </div>
             </div>
-
-
-            <el-table v-loading="loading" element-loading-text="Loading data..." :data="filteredTableData" style="width: 100%;" :lazy="true" border>
+            <div class="row ml-1 mb-1"> 
+                <template>
+                    <el-button
+                        class="ml-2 mr-1"
+                        icon="el-icon-caret-right"
+                        size="mini"
+                        @click="openAction" type="warning" v-if="!action"></el-button>
+                        <el-button
+                        class="ml-2 mr-1"
+                        icon="el-icon-caret-left"
+                        size="mini"
+                        @click="closeAction" type="warning" v-if="action"></el-button>
+                    <el-input
+                        v-model="search"
+                        size="mini"
+                        placeholder="Search last name of first name"
+                        style="width: 250px;"
+                    />
+                    <el-button
+                        class="ml-2"
+                        size="mini"
+                        @click="searchBenificiaries" type="primary">Search</el-button>
+                </template>
+            </div>
+            <el-table v-loading="loading" element-loading-text="Loading data..." :data="tableData"  :lazy="true" border>
                 <!-- <el-table-column label="Id" property="id" width="50"></el-table-column> -->
-                <el-table-column label="Last Name" property="last_name" width="200" fixed="left"></el-table-column>
+                <el-table-column label="Last Name" property="last_name" width="200"></el-table-column>
                 <el-table-column label="Maiden Name" property="maiden_name" width="200"></el-table-column>
-                <el-table-column label="First Name" property="first_name" width="200" fixed="left"></el-table-column>
-                <el-table-column label="Middle Name" property="middle_name" width="200" fixed="left"></el-table-column>
+                <el-table-column label="First Name" property="first_name" width="200"></el-table-column>
+                <el-table-column label="Middle Name" property="middle_name" width="200"></el-table-column>
                 <el-table-column label="Name Ext" property="name_ext" width="150"></el-table-column>
                 <el-table-column label="Sex" property="sex"></el-table-column>
                 <el-table-column label="Email" property="email" width="150"></el-table-column>
                 <el-table-column label="Contact #" property="contact_number" width="150"></el-table-column>
                 <el-table-column label="Address" property="address" width="150"></el-table-column>
                 <el-table-column label="Comaker" property="comaker" width="150"></el-table-column>
-                <el-table-column label="HEI" property="hei" width="250"></el-table-column>
+                <el-table-column label="HEI" property="hei" width="450"></el-table-column>
                 <el-table-column label="Course" property="course" width="200"></el-table-column>
                 <el-table-column label="Month Year Graduated" property="month_year_graduated" width="250"></el-table-column>
                 <el-table-column label="1st Date of Employment" property="employment_info.first_date_employment" width="250"></el-table-column>
@@ -385,31 +452,46 @@
                 <el-table-column label="Company Address" property="employment_info.company_address" width="200"></el-table-column>
                 <el-table-column label="No of Years Employed" property="employment_info.no_years_emp" width="250"></el-table-column>
                 <el-table-column label="Payment Status" property="status_info.status" width="200"></el-table-column>
-                <el-table-column label="NBI Status" property="status_info.submitted_nbi" width="200"></el-table-column>
-                <el-table-column label="Principal Loan" property="disbursement_info.principal_loan" width="200"></el-table-column>
-                <el-table-column label="Interest during Repayment Period" property="disbursement_info.interest_during_repayment_period" width="320"></el-table-column>
-                <el-table-column label="Penalty" property="disbursement_info.penalty" width="200"></el-table-column>
-                <el-table-column label="Total Full Amortization" property="disbursement_info.total_full_amortization" width="235"></el-table-column>
-                <el-table-column label="Date Paid" property="repayment_info.date_paid" width="200"></el-table-column>
+                <el-table-column label="NBI Status" property="status_info.submitted_nbi" width="500"></el-table-column>
+                <el-table-column label="Principal Loan" width="200">
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(row.disbursement_info.principal_loan) }}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Interest during Repayment Period" width="320">
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(row.disbursement_info.interest_during_repayment_period) }}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Penalty" width="200">
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(row.disbursement_info.penalty) }}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Total Full Amortization" width="235">
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(row.disbursement_info.total_full_amortization) }}</p>
+                    </template>
+                </el-table-column>
+                <!-- <el-table-column label="Date Paid" property="repayment_info.date_paid" width="200"></el-table-column>
                 <el-table-column label="Amount Paid" property="repayment_info.amount_paid" width="200"></el-table-column>
-                <el-table-column label="Confirmation Number" property="repayment_info.confirmation_number" width="220"></el-table-column>
-                <el-table-column label="Total Amount Paid" property="repayment_info.total_amount_paid" width="200"></el-table-column>
+                <el-table-column label="Confirmation Number" property="repayment_info.confirmation_number" width="220"></el-table-column> -->
+                <el-table-column label="Total Amount Paid" width="200">
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(row.repayment_info.total_amount_paid) }}</p>
+                    </template>
+                </el-table-column>
                 <el-table-column label="Outstanding Balance" width="250">
-                    <template slot-scope="scope">
-                        {{ scope.row.repayment_info.outstanding_balance }}
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(row.repayment_info.outstanding_balance) }}</p>
                     </template>
                 </el-table-column>
                 <el-table-column
                     label="Actions"
-                    width="370"
-                    fixed="right"
+                    width="600"
+                    fixed="left"
+                    v-if="action"
                 >
-                    <template slot="header" slot-scope="scope">
-                        <el-input
-                        v-model="search"
-                        size="mini"
-                        placeholder="Type to search"/>
-                    </template>
                     <template slot-scope="scope">
                         <div class="button-container">
                             <el-button
@@ -423,33 +505,16 @@
                             size="mini"
                             type="info"
                             @click="viewPayment(scope.row)">View Payment</el-button>
-                            <!-- <el-popover
-                            placement="right"
-                            width="720"
-                            transition="el-fade-in-linear"
-                            trigger="click"
-                            >
-                                <el-table :data="payments">
-                                    <el-table-column width="150" property="date_paid" label="date paid"></el-table-column>
-                                    <el-table-column width="150" property="amount_paid" label="amount paid"></el-table-column>
-                                    <el-table-column width="250" property="confirmation_number" label="confirmation number"></el-table-column>
-                                    <el-table-column width="100" label="action">                   
-                                         <template slot-scope="scope">
-                                             <div class="button-container">
-                                                <el-button
-                                                size="mini"
-                                                @click="handleEdit(scope.row)" type="primary">
-                                                Edit
-                                            </el-button>
-                                            </div>
-                                        </template>
-                                    </el-table-column>
-                                </el-table>
-                                <el-button type="info" slot="reference" size="mini" class="ml-2" @click="viewPayment(scope.row)">View Payment</el-button>
-                            </el-popover> -->
+                            <el-button
+                            size="mini"
+                            type="warning"
+                            @click="addStatuses(scope.row)">Add Status</el-button>
+                            <el-button
+                            size="mini"
+                            type="info"
+                            @click="viewStatus(scope.row)">View Status</el-button>
+
                         </div>
-
-
                     </template>
                 </el-table-column>
             </el-table>
@@ -459,6 +524,7 @@
                 :total="totalPage"
                 :page-size="pageSize"
                 @current-change="handlePaginationChange"
+                class="mt-3 mb-3"
             ></el-pagination>
           </div>
         </div>
@@ -508,6 +574,7 @@
         modalVisible: false,
         modalVisiblePayment: false,
         modalVisiblePaymentTable: false,
+        modalVisibleStatusTable: false,
         form: {
             last_name: '',
             maiden_name: '',
@@ -546,20 +613,29 @@
             benefeciaryId: ''
         },
         payment: {
-            id: '',
+            personal_id: '',
             date_paid: '',
             amount_paid: '',
             confirmation_number: ''
         },
+        status: {
+            personal_id: '',
+            date: '',
+            action_taken: '',
+        },
         tableData: [],
         search: '',
         payments: [],
+        statuses: [],
         paymentFlag: false,
+        statusFlag: false,
         total_amount_paid: '',
         re_total_amount_paid: '',
         outstanding_blance: '',
         loading: false,
         totalPage: 0,
+        modalVisibleStatuses: false,
+        action: false,
       }
     },
     computed: {
@@ -581,6 +657,12 @@
         this.getBeneficiaries(this.currentPage);
     },
     methods: {
+        openAction() {
+            this.action = true;
+        },
+        closeAction() {
+            this.action = false;
+        },
         handleCommandChange(command) {
             switch (command) {
                 case '1':
@@ -600,6 +682,31 @@
             }
         },
         formatAmount(amount) {
+            let num_parts = amount.toString().split(".");
+            num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+            return num_parts.join(".");
+        },
+        searchBenificiaries() {
+            this.loading = true;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            axios
+                .get('api/search-beneficiaries/' + this.search)
+                .then((response) => {
+
+                    console.log("check search data", response.data);
+                    this.tableData = response.data;
+                    this.loading = false;
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+        },
+        addComma(amount) {
+            if(amount == null) {
+                return '';
+            }
             let num_parts = amount.toString().split(".");
             num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
@@ -718,6 +825,25 @@
             // After successful addition, close the modal and reset the form
             this.modalVisiblePayment = false;
         },
+        async addStatus() {
+            await axios
+                .post('api/status', this.status)
+                .then((response) => {
+                    this.$notify({
+                        message: 'Payment successfully added!',
+                        type: 'success',
+                    });
+                    this.status = {};
+                    console.log("check statususu", response);
+                })
+                .catch((response) => {
+                console.log(response);
+                alert('Something went wrong!');
+                });
+
+            // After successful addition, close the modal and reset the form
+            this.modalVisibleStatuses = false;
+        },
         getBeneficiaries(page) {
             this.loading = true;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
@@ -760,6 +886,24 @@
             // After successful addition, close the modal and reset the form
             this.modalVisible = false;
         },
+        async getStatusesPerBeneficiary(id) {
+
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+            await axios
+                .get('api/status/' + id)
+                .then((response) => {
+                    this.statuses = response.data.data;
+                    console.log("check statuses per beneficiaries", response);
+
+                })
+                .catch((response) => {
+                    console.log(response);
+                    alert('Something went wrong!');
+                });
+
+            // After successful addition, close the modal and reset the form
+            this.modalVisible = false;
+        },
         handleEdit(beneficiary) {
             this.handleForm(beneficiary);
 
@@ -767,11 +911,51 @@
 
             this.modalVisible = true;
         },
+        async deleteStatus(status) {
+            await axios
+                .post('api/status-del/' + status.id)
+                .then((response) => {
+                    this.$notify({
+                        message: response.data.message,
+                        type: 'success',
+                    });
+                    console.log("check response", response);
+                    this.getStatusesPerBeneficiary(status.personal_id); 
+ 
+                })
+                .catch((response) => {
+                console.log(response);
+                alert('Something went wrong!');
+                });
+        },
+        async deletePayment(payment) {
+            await axios
+                .post('api/payment-del/' + payment.id)
+                .then((response) => {
+                    this.$notify({
+                        message: response.data.message,
+                        type: 'success',
+                    });
+                    console.log("check response", response);
+                    this.getPaymentsPerBeneficiary(payment.personal_id); 
+ 
+                })
+                .catch((response) => {
+                console.log(response);
+                alert('Something went wrong!');
+                });
+        },
         handlePaymentEdit(payment) {
 
             this.handleFormPayment(payment);
 
             this.paymentFlag = true;
+        },
+        handleStatusEdit(status) {
+
+            this.handleFormStatus(status);
+
+            this.statusFlag = true;
         },
        async updatePayment() {
             await axios
@@ -791,9 +975,31 @@
                 });
         },
 
+        async updateStatus() {
+            await axios
+                .post('api/status/' + this.status.id, this.status)
+                .then((response) => {
+                    this.$notify({
+                        message: 'Status successfully updated!',
+                        type: 'success',
+                    });
+                    this.getStatusesPerBeneficiary(this.status.personal_id); 
+                    this.statusFlag = false;
+                    this.status = {};
+                })
+                .catch((response) => {
+                console.log(response);
+                alert('Something went wrong!');
+                });
+        },
+
         addPayments(beneficiary) {
             this.modalVisiblePayment = true;
             this.payment.personal_id = beneficiary.id;
+        },
+        addStatuses(beneficiary) {
+            this.modalVisibleStatuses = true;
+            this.status.personal_id = beneficiary.id;
         },
         viewPayment(beneficiary) {
             this.getPaymentsPerBeneficiary(beneficiary.id);
@@ -802,12 +1008,23 @@
             this.outstanding_blance = beneficiary.disbursement_info.total_full_amortization;
             console.log("check bne", beneficiary);
         },
+        viewStatus(beneficiary) {
+            this.getStatusesPerBeneficiary(beneficiary.id);
+            this.modalVisibleStatusTable = true;
+        },
         handleFormPayment(payment) {
             this.payment.id = payment.id;
             this.payment.personal_id = payment.personal_id;
             this.payment.date_paid = payment.date_paid;
             this.payment.amount_paid = payment.amount_paid;
             this.payment.confirmation_number = payment.confirmation_number;
+        },
+        handleFormStatus(status) {
+            this.status.id = status.id;
+            this.status.personal_id = status.personal_id;
+            this.status.date = status.date;
+            this.status.action_taken = status.action_taken;
+            this.status.encoded_by = status.encoded_by;
         },
         handleForm(beneficiary) {
             this.form.last_name = beneficiary.last_name;
@@ -852,6 +1069,7 @@
 
 </script>
 <style scoped>
+
     .button-container {
         display: flex;
         justify-content: center;
