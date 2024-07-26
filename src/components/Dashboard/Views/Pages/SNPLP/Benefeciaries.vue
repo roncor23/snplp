@@ -333,8 +333,8 @@
                     </table>
                     <span slot="footer" class="dialog-footer">
                         <p class="text-left font-weight-bold">TOTAL PAYABLE: <span>{{ formatNumberWithCommas(outstanding_blance) }}</span></p>
-                        <p class="text-left font-weight-bold">TOTAL AMOUNT PAID: <span>{{ formatNumberWithCommas(total_amount_paid + Number(re_total_amount_paid)) }}</span></p>
-                        <p class="text-left font-weight-bold">OUTSTANDING BALANCE: <span v-if="outstanding_blance > 0">{{ (formatNumberWithCommas(outstanding_blance - Number(re_total_amount_paid) - Number(total_amount_paid))) }}</span></p>
+                        <p class="text-left font-weight-bold">TOTAL AMOUNT PAID: <span>{{ formatNumberWithCommas(total_amount_paid) }}</span></p>
+                        <p class="text-left font-weight-bold">OUTSTANDING BALANCE: <span v-if="outstanding_blance > 0">{{ (formatNumberWithCommas(outstanding_blance - Number(total_amount_paid))) }}</span></p>
                         <el-button @click="modalVisiblePaymentTable = false, paymentFlag = false" v-if="!paymentFlag">Close</el-button>
                         <el-button @click="paymentFlag = false" v-if="paymentFlag">Back</el-button>
                         <el-button type="primary" @click="updatePayment" v-if="paymentFlag">Update</el-button>
@@ -630,7 +630,6 @@
         paymentFlag: false,
         statusFlag: false,
         total_amount_paid: '',
-        re_total_amount_paid: '',
         outstanding_blance: '',
         loading: false,
         totalPage: 0,
@@ -1004,7 +1003,7 @@
         viewPayment(beneficiary) {
             this.getPaymentsPerBeneficiary(beneficiary.id);
             this.modalVisiblePaymentTable = true;
-            this.re_total_amount_paid = beneficiary.repayment_info.total_amount_paid;
+            // this.re_total_amount_paid = beneficiary.repayment_info.total_amount_paid;
             this.outstanding_blance = beneficiary.disbursement_info.total_full_amortization;
             console.log("check bne", beneficiary);
         },
