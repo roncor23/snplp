@@ -4,10 +4,17 @@ function resolveSrc(_path) {
   return path.join(__dirname, _path)
 }
 module.exports = {
-  // devServer: {
-  //     // host: 'snplp.chedcaraga.test'
-
-  // },
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+        logLevel: 'debug',
+        ws: true // Enable websocket proxying
+      }
+    }
+  },
   configureWebpack: {
     // Set up all the aliases we use in our app.
     resolve: {

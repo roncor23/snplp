@@ -5,8 +5,8 @@
   "description": "A premium Vue.js admin dashboard for bootstrap. Coded by BinarCode, designed by Creative Tim.",
   "author": "cristi.jora <joracristi@gmail.com>",
   "scripts": {
-    "build": "vue-cli-service build",
-    "dev": "vue-cli-service serve --open"
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider vue-cli-service build",
+    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve --open"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^23.1.0",
@@ -16,9 +16,9 @@
     "@fullcalendar/interaction": "4.4.2",
     "@fullcalendar/timegrid": "4.4.2",
     "@fullcalendar/vue": "4.4.0",
-    "axios": "^0.20.0",
+    "axios": "^1.6.0",
     "chart.js": "^2.9.3",
-    "core-js": "^3.6.5",
+    "core-js": "3.6.5",
     "d3": "^5.16.0",
     "datamaps": "^0.5.9",
     "dotenv": "^8.2.0",
@@ -26,8 +26,8 @@
     "google-maps": "^4.2.3",
     "install": "^0.13.0",
     "jsona": "^1.8.0",
+    "jspdf": "^2.5.1",
     "moment": "^2.29.1",
-    "npm": "^6.14.10",
     "nprogress": "^0.2.0",
     "perfect-scrollbar": "^1.5.0",
     "qs": "^6.9.4",
@@ -51,12 +51,13 @@
     "vuex-persistedstate": "^4.1.0"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^4.3.1",
-    "@vue/cli-plugin-pwa": "^4.3.1",
-    "@vue/cli-service": "^4.3.1",
+    "@vue/cli-plugin-babel": "^4.5.19",
+    "@vue/cli-plugin-pwa": "^4.5.19",
+    "@vue/cli-service": "^4.5.19",
     "babel-plugin-component": "^1.1.1",
-    "node-sass": "^4.14.1",
-    "sass-loader": "^8.0.2",
+    "cross-env": "^10.1.0",
+    "sass": "^1.32.13",
+    "sass-loader": "^10.4.1",
     "vue-template-compiler": "^2.6.11"
   },
   "browserslist": [
@@ -65,7 +66,10 @@
     "not ie <= 10"
   ],
   "engines": {
-    "node": ">= 8.9.0",
-    "npm": ">= 5.0.0"
+    "node": ">= 14.0.0",
+    "npm": ">= 6.0.0"
+  },
+  "overrides": {
+    "websocket-driver": "^0.7.4"
   }
 }

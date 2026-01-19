@@ -95,6 +95,12 @@
                                         <el-input v-model="form.email"></el-input>
                                     </el-form-item>
                                 </div>
+                                <div class="form-item">
+                                    <label class="custom-label">Award Number</label>
+                                    <el-form-item>
+                                        <el-input v-model="form.award_number"></el-input>
+                                    </el-form-item>
+                                </div>
                             </div>
                         </el-form>
                         <el-divider content-position="left">Employment Information</el-divider>
@@ -341,6 +347,191 @@
                     </span>
                 </el-dialog>
 
+                <el-dialog title="Confirm Interest Calculation" :visible.sync="modalVisibleConfirmCalculateAll" width="400px">
+                    <div style="text-align: center; padding: 20px 0;">
+                        <i class="el-icon-warning" style="font-size: 48px; color: #E6A23C; margin-bottom: 15px;"></i>
+                        <p style="font-size: 16px; margin-bottom: 10px;">
+                            Are you sure you want to calculate interest for all beneficiaries?
+                        </p>
+                        <p style="font-size: 14px; color: #909399;">
+                            This may take a few moments.
+                        </p>
+                    </div>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleConfirmCalculateAll = false">Cancel</el-button>
+                        <el-button type="warning" @click="confirmCalculateInterestForAll">Confirm</el-button>
+                    </div>
+                </el-dialog>
+                <el-dialog title="Confirm Interest Calculation" :visible.sync="modalVisibleConfirmCalculateSingle" width="400px">
+                    <div style="text-align: center; padding: 20px 0;">
+                        <i class="el-icon-warning" style="font-size: 48px; color: #E6A23C; margin-bottom: 15px;"></i>
+                        <p style="font-size: 16px; margin-bottom: 10px;">
+                            Are you sure you want to calculate interest for
+                        </p>
+                        <p style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #303133;">
+                            {{ selectedBeneficiaryForInterest ? selectedBeneficiaryForInterest.first_name + ' ' + selectedBeneficiaryForInterest.last_name : 'this beneficiary' }}?
+                        </p>
+                        <p style="font-size: 14px; color: #909399;">
+                            Interest will be calculated at 6% per annum based on the outstanding balance.
+                        </p>
+                    </div>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleConfirmCalculateSingle = false">Cancel</el-button>
+                        <el-button type="warning" @click="confirmCalculateInterest">Confirm</el-button>
+                    </div>
+                </el-dialog>
+                <el-dialog title="Interest Calculation" :visible.sync="modalVisibleInterest" width="50%">
+                    <div v-if="calculating" class="text-center">
+                        <i class="el-icon-loading" style="font-size: 24px;"></i>
+                        <p>Calculating interest...</p>
+                    </div>
+                    <div v-else-if="interestResult">
+                        <el-alert
+                            :title="interestResult.success ? 'Success' : (interestResult.isDuplicate ? 'Already Calculated' : 'Error')"
+                            :type="interestResult.success ? 'success' : (interestResult.isDuplicate ? 'warning' : 'error')"
+                            :description="interestResult.message"
+                            show-icon
+                            :closable="false"
+                            class="mb-3">
+                        </el-alert>
+                        <div v-if="interestResult.success && interestResult.data">
+                            <el-table :data="[interestResult.data]" border>
+                                <el-table-column prop="beneficiary_name" label="Beneficiary Name" width="200"></el-table-column>
+                                <el-table-column prop="personal_id" label="Personal ID" width="120"></el-table-column>
+                                <el-table-column label="Outstanding Balance" width="150">
+                                    <template slot-scope="scope">
+                                        ₱{{ formatAmount(scope.row.outstanding_balance) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="Interest Rate" width="130">
+                                    <template slot-scope="scope">
+                                        6% per annum
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="Calculated Interest" width="150">
+                                    <template slot-scope="scope">
+                                        ₱{{ formatAmount(scope.row.calculated_interest) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="calculation_date" label="Calculation Date" width="150"></el-table-column>
+                                <el-table-column prop="period" label="Period" width="100"></el-table-column>
+                                <el-table-column prop="notes" label="Notes" show-overflow-tooltip></el-table-column>
+                            </el-table>
+                        </div>
+                        <div v-else-if="interestResult.isDuplicate && interestResult.existing_calculation" class="mt-3">
+                            <h4 style="margin-bottom: 15px; color: #E6A23C;">Existing Calculation Details:</h4>
+                            <el-table :data="[interestResult.existing_calculation]" border>
+                                <el-table-column prop="calculation_date" label="Calculation Date" width="150"></el-table-column>
+                                <el-table-column prop="period" label="Period" width="100"></el-table-column>
+                                <el-table-column label="Calculated Interest" width="150">
+                                    <template slot-scope="scope">
+                                        ₱{{ formatAmount(scope.row.calculated_interest) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="created_at" label="Created At" width="180">
+                                    <template slot-scope="scope">
+                                        {{ formatDate(scope.row.created_at) }}
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <p class="mt-3" style="color: #909399; font-size: 14px;">
+                                <i class="el-icon-info"></i> Interest has already been calculated for this beneficiary in the period <strong>{{ interestResult.existing_calculation.period }}</strong>. 
+                                To view all calculations, click the "Interest History" button.
+                            </p>
+                        </div>
+                    </div>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleInterest = false">Close</el-button>
+                    </div>
+                </el-dialog>
+                <el-dialog title="Interest Calculation (All Beneficiaries)" :visible.sync="modalVisibleInterestAll" width="60%">
+                    <div v-if="calculatingAll" class="text-center">
+                        <i class="el-icon-loading" style="font-size: 24px;"></i>
+                        <p>Calculating interest for all beneficiaries...</p>
+                    </div>
+                    <div v-else-if="interestAllResult">
+                        <el-alert
+                            :title="interestAllResult.success ? 'Success' : 'Error'"
+                            :type="interestAllResult.success ? 'success' : 'error'"
+                            :description="interestAllResult.message"
+                            show-icon
+                            :closable="false"
+                            class="mb-3">
+                        </el-alert>
+                        <div v-if="interestAllResult.success && interestAllResult.summary">
+                            <div class="mb-3" style="padding: 15px; background-color: #f5f7fa; border-radius: 4px;">
+                                <p><strong>Total Processed:</strong> {{ interestAllResult.summary.total_processed }}</p>
+                                <p><strong>Successful:</strong> {{ interestAllResult.summary.successful }}</p>
+                                <p><strong>Skipped:</strong> {{ interestAllResult.summary.skipped }}</p>
+                                <p v-if="interestAllResult.summary.already_calculated !== undefined">
+                                    <strong>Already Calculated:</strong> {{ interestAllResult.summary.already_calculated }}
+                                </p>
+                            </div>
+                            <el-table :data="interestAllResult.data" border max-height="400" v-if="interestAllResult.data && interestAllResult.data.length > 0">
+                                <el-table-column prop="beneficiary_name" label="Beneficiary" width="200"></el-table-column>
+                                <el-table-column prop="outstanding_balance" label="Outstanding Balance" width="150">
+                                    <template slot-scope="scope">
+                                        ₱{{ formatAmount(scope.row.outstanding_balance) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="calculated_interest" label="Calculated Interest" width="150">
+                                    <template slot-scope="scope">
+                                        <span v-if="scope.row.calculated_interest">₱{{ formatAmount(scope.row.calculated_interest) }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="status" label="Status" width="250" show-overflow-tooltip></el-table-column>
+                                <el-table-column label="Existing Calculation ID" width="180" v-if="interestAllResult.data && interestAllResult.data.some(item => item.existing_calculation_id)">
+                                    <template slot-scope="scope">
+                                        <span v-if="scope.row.existing_calculation_id">ID: {{ scope.row.existing_calculation_id }}</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleInterestAll = false">Close</el-button>
+                    </div>
+                </el-dialog>
+                <el-dialog title="Interest History" :visible.sync="modalVisibleInterestHistory" width="70%">
+                    <div v-if="loadingInterestHistory" class="text-center">
+                        <i class="el-icon-loading" style="font-size: 24px;"></i>
+                        <p>Loading interest history...</p>
+                    </div>
+                    <div v-else>
+                        <el-table :data="interestHistory" border v-if="interestHistory && interestHistory.length > 0">
+                            <el-table-column prop="calculation_date" label="Calculation Date" width="150"></el-table-column>
+                            <el-table-column prop="period" label="Period" width="120"></el-table-column>
+                            <el-table-column prop="outstanding_balance" label="Outstanding Balance" width="150">
+                                <template slot-scope="scope">
+                                    ₱{{ formatAmount(scope.row.outstanding_balance) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="interest_rate" label="Interest Rate" width="120">
+                                <template slot-scope="scope">
+                                    {{ scope.row.interest_rate }}%
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="calculated_interest" label="Calculated Interest" width="150">
+                                <template slot-scope="scope">
+                                    ₱{{ formatAmount(scope.row.calculated_interest) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="notes" label="Notes" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="created_at" label="Created At" width="180">
+                                <template slot-scope="scope">
+                                    {{ formatDate(scope.row.created_at) }}
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <div v-else class="text-center" style="padding: 40px;">
+                            <i class="el-icon-info" style="font-size: 48px; color: #909399;"></i>
+                            <p style="margin-top: 16px; color: #909399;">No interest calculations found</p>
+                        </div>
+                    </div>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleInterestHistory = false">Close</el-button>
+                    </div>
+                </el-dialog>
                 <el-dialog title="Status" :visible.sync="modalVisibleStatusTable" width="40%">
                     <el-table :data="statuses" v-if="!statusFlag">
                         <el-table-column width="150" property="date" label="date"></el-table-column>
@@ -406,7 +597,7 @@
                     </el-dropdown>
                 </div>
             </div>
-            <div class="row ml-1 mb-1"> 
+            <div class="row ml-1 mb-1" style="flex-wrap: wrap; align-items: center;"> 
                 <template>
                     <el-button
                         class="ml-2 mr-1"
@@ -422,12 +613,22 @@
                         v-model="search"
                         size="mini"
                         placeholder="Search last name of first name"
-                        style="width: 250px;"
+                        style="width: 250px; margin: 0 8px;"
                     />
                     <el-button
                         class="ml-2"
                         size="mini"
                         @click="searchBenificiaries" type="primary">Search</el-button>
+                    <el-button
+                        class="ml-2"
+                        size="mini"
+                        icon="el-icon-download"
+                        @click="exportToCSV" type="success" :loading="exporting">Export CSV</el-button>
+                    <el-button
+                        class="ml-2"
+                        size="mini"
+                        icon="el-icon-calculator"
+                        @click="calculateInterestForAll" type="warning" :loading="calculatingAll">Calculate Interest (All)</el-button>
                 </template>
             </div>
             <el-table v-loading="loading" element-loading-text="Loading data..." :data="tableData"  :lazy="true" border>
@@ -481,14 +682,9 @@
                         <p class="text-right">{{ addComma(row.repayment_info.total_amount_paid) }}</p>
                     </template>
                 </el-table-column>
-                <el-table-column label="Outstanding Balance" width="250">
-                    <template v-slot="{row}"> 
-                        <p class="text-right">{{ addComma(row.repayment_info.outstanding_balance) }}</p>
-                    </template>
-                </el-table-column>
                 <el-table-column
                     label="Actions"
-                    width="600"
+                    width="800"
                     fixed="left"
                     v-if="action"
                 >
@@ -513,6 +709,21 @@
                             size="mini"
                             type="info"
                             @click="viewStatus(scope.row)">View Status</el-button>
+                            <el-button
+                            size="mini"
+                            type="warning"
+                            icon="el-icon-calculator"
+                            @click="calculateInterest(scope.row)">Calculate Interest</el-button>
+                            <el-button
+                            size="mini"
+                            type="info"
+                            icon="el-icon-view"
+                            @click="viewInterestHistory(scope.row)">Interest History</el-button>
+                            <el-button
+                            size="mini"
+                            type="danger"
+                            icon="el-icon-document"
+                            @click="generatePDF(scope.row)">Generate PDF</el-button>
 
                         </div>
                     </template>
@@ -534,7 +745,8 @@
 </template>
 <script>
   import Vue from 'vue'
-  import {Table, TableColumn, Select, Button, Dialog, Form, FormItem, Input, Divider, Pagination, Popover, Dropdown, DropdownMenu, DropdownItem  } from 'element-ui'
+  import {Table, TableColumn, Select, Button, Dialog, Form, FormItem, Input, Divider, Pagination, Popover, Dropdown, DropdownMenu, DropdownItem, Alert  } from 'element-ui'
+  import jsPDF from 'jspdf'
   import 'element-ui/lib/theme-chalk/dialog.css';
   import 'element-ui/lib/theme-chalk/form.css';
   import 'element-ui/lib/theme-chalk/form-item.css';
@@ -544,6 +756,7 @@
   import 'element-ui/lib/theme-chalk/dropdown.css';
   import 'element-ui/lib/theme-chalk/dropdown-menu.css';
   import 'element-ui/lib/theme-chalk/dropdown-item.css';
+  import 'element-ui/lib/theme-chalk/alert.css';
 
   Vue.use(Table)
   Vue.use(TableColumn)
@@ -559,6 +772,7 @@
   Vue.component(Dropdown.name, Dropdown);
   Vue.component(DropdownMenu.name, DropdownMenu);
   Vue.component(DropdownItem.name, DropdownItem);
+  Vue.component(Alert.name, Alert);
 
   export default {
     data () {
@@ -589,6 +803,7 @@
             contact_number: '',
             address: '',
             email: '',
+            award_number: '',
 
             principal_loan: '',
             interest_during_repayment_period: '',
@@ -635,6 +850,19 @@
         totalPage: 0,
         modalVisibleStatuses: false,
         action: false,
+        exporting: false,
+        modalVisibleInterest: false,
+        modalVisibleInterestAll: false,
+        modalVisibleInterestHistory: false,
+        modalVisibleConfirmCalculateAll: false,
+        modalVisibleConfirmCalculateSingle: false,
+        calculating: false,
+        calculatingAll: false,
+        interestResult: null,
+        interestAllResult: null,
+        interestHistory: [],
+        loadingInterestHistory: false,
+        selectedBeneficiaryForInterest: null,
       }
     },
     computed: {
@@ -1039,6 +1267,7 @@
             this.form.contact_number = beneficiary.contact_number;
             this.form.address = beneficiary.address;
             this.form.email = beneficiary.email;
+            this.form.award_number = beneficiary.award_number || '';
             //disbursement info
             this.form.principal_loan = beneficiary.disbursement_info.principal_loan;
             this.form.interest_during_repayment_period = beneficiary.disbursement_info.interest_during_repayment_period;
@@ -1060,6 +1289,482 @@
             this.form.status = beneficiary.status_info.status;
             this.form.submitted_nbi = beneficiary.status_info.submitted_nbi;
         },
+        async exportToCSV() {
+            this.exporting = true;
+            try {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                
+                // Call the export-csv API endpoint
+                const response = await axios.get('api/export-csv', {
+                    responseType: 'blob' // Important: handle binary data
+                });
+                
+                // Create a blob from the response
+                const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+                
+                // Create a download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `beneficiaries_with_payments_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                
+                // Clean up
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                
+                this.$notify({
+                    message: 'CSV exported successfully!',
+                    type: 'success',
+                });
+            } catch (error) {
+                console.error('Error exporting CSV:', error);
+                this.$notify({
+                    message: 'Error exporting CSV. Please try again.',
+                    type: 'error',
+                });
+            } finally {
+                this.exporting = false;
+            }
+        },
+        calculateInterest(beneficiary) {
+            // Store beneficiary for confirmation modal
+            this.selectedBeneficiaryForInterest = beneficiary;
+            // Open confirmation modal
+            this.modalVisibleConfirmCalculateSingle = true;
+        },
+        async confirmCalculateInterest() {
+            // Close confirmation modal
+            this.modalVisibleConfirmCalculateSingle = false;
+            
+            // Proceed with calculation
+            const beneficiary = this.selectedBeneficiaryForInterest;
+            this.calculating = true;
+            this.modalVisibleInterest = true;
+            this.interestResult = null;
+
+            try {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                
+                const currentDate = new Date().toISOString().split('T')[0];
+                const currentYear = new Date().getFullYear().toString();
+
+                const response = await axios.post('api/interest/calculate', {
+                    personal_id: beneficiary.id,
+                    calculation_date: currentDate,
+                    period: currentYear,
+                    notes: `Interest calculation for ${beneficiary.first_name} ${beneficiary.last_name}`
+                });
+
+                this.interestResult = response.data;
+                
+                if (response.data.success) {
+                    this.$notify({
+                        message: 'Interest calculated successfully!',
+                        type: 'success',
+                    });
+                    // Refresh the beneficiaries list to show updated data
+                    this.getBeneficiaries(this.currentPage);
+                }
+            } catch (error) {
+                console.error('Error calculating interest:', error);
+                
+                // Handle 409 Conflict - Duplicate calculation
+                if (error.response?.status === 409) {
+                    this.interestResult = {
+                        success: false,
+                        message: error.response?.data?.message || 'Interest has already been calculated for this period.',
+                        existing_calculation: error.response?.data?.existing_calculation || null,
+                        isDuplicate: true
+                    };
+                    this.$notify({
+                        message: error.response?.data?.message || 'Interest has already been calculated for this period.',
+                        type: 'warning',
+                        duration: 5000
+                    });
+                } else {
+                    // Handle other errors (400, 422, 500, etc.)
+                    this.interestResult = {
+                        success: false,
+                        message: error.response?.data?.message || 'Error calculating interest. Please try again.',
+                        isDuplicate: false
+                    };
+                    this.$notify({
+                        message: error.response?.data?.message || 'Error calculating interest. Please try again.',
+                        type: 'error',
+                    });
+                }
+            } finally {
+                this.calculating = false;
+            }
+        },
+        calculateInterestForAll() {
+            // Open confirmation modal instead of using confirm()
+            this.modalVisibleConfirmCalculateAll = true;
+        },
+        async confirmCalculateInterestForAll() {
+            // Close confirmation modal
+            this.modalVisibleConfirmCalculateAll = false;
+            
+            // Proceed with calculation
+            this.calculatingAll = true;
+            this.modalVisibleInterestAll = true;
+            this.interestAllResult = null;
+
+            try {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                
+                const currentDate = new Date().toISOString().split('T')[0];
+                const currentYear = new Date().getFullYear().toString();
+
+                const response = await axios.post('api/interest/calculate-all', {
+                    calculation_date: currentDate,
+                    period: currentYear
+                });
+
+                this.interestAllResult = response.data;
+                
+                if (response.data.success) {
+                    this.$notify({
+                        message: response.data.message,
+                        type: 'success',
+                    });
+                    // Refresh the beneficiaries list to show updated data
+                    this.getBeneficiaries(this.currentPage);
+                }
+            } catch (error) {
+                console.error('Error calculating interest for all:', error);
+                this.interestAllResult = {
+                    success: false,
+                    message: error.response?.data?.message || 'Error calculating interest for all beneficiaries. Please try again.'
+                };
+                this.$notify({
+                    message: error.response?.data?.message || 'Error calculating interest for all beneficiaries. Please try again.',
+                    type: 'error',
+                });
+            } finally {
+                this.calculatingAll = false;
+            }
+        },
+        async viewInterestHistory(beneficiary) {
+            this.selectedBeneficiaryForInterest = beneficiary;
+            this.loadingInterestHistory = true;
+            this.modalVisibleInterestHistory = true;
+            this.interestHistory = [];
+
+            try {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                
+                const response = await axios.get(`api/interest/${beneficiary.id}`);
+
+                if (response.data.success) {
+                    this.interestHistory = response.data.data || [];
+                } else {
+                    this.interestHistory = [];
+                }
+            } catch (error) {
+                console.error('Error loading interest history:', error);
+                this.interestHistory = [];
+                this.$notify({
+                    message: 'Error loading interest history. Please try again.',
+                    type: 'error',
+                });
+            } finally {
+                this.loadingInterestHistory = false;
+            }
+        },
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
+        formatCurrency(amount) {
+            if (!amount) return '0.00';
+            const num = parseFloat(amount);
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+        numberToWords(amount) {
+            // Number to words converter
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
+                          'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            
+            let num = Math.floor(amount);
+            const cents = Math.round((amount - num) * 100);
+            
+            if (num === 0) return 'Zero Pesos Only';
+            
+            let words = '';
+            
+            // Handle millions
+            if (num >= 1000000) {
+                const millions = Math.floor(num / 1000000);
+                if (millions >= 100) {
+                    words += ones[Math.floor(millions / 100)] + ' Hundred ';
+                    const remainder = millions % 100;
+                    if (remainder >= 20) {
+                        words += tens[Math.floor(remainder / 10)] + ' ' + ones[remainder % 10] + ' ';
+                    } else if (remainder > 0) {
+                        words += ones[remainder] + ' ';
+                    }
+                } else if (millions >= 20) {
+                    words += tens[Math.floor(millions / 10)] + ' ' + ones[millions % 10] + ' ';
+                } else if (millions > 0) {
+                    words += ones[millions] + ' ';
+                }
+                words += 'Million ';
+                num = num % 1000000;
+            }
+            
+            // Handle thousands
+            if (num >= 1000) {
+                const thousands = Math.floor(num / 1000);
+                if (thousands >= 100) {
+                    words += ones[Math.floor(thousands / 100)] + ' Hundred ';
+                    const remainder = thousands % 100;
+                    if (remainder >= 20) {
+                        words += tens[Math.floor(remainder / 10)] + ' ' + ones[remainder % 10] + ' ';
+                    } else if (remainder > 0) {
+                        words += ones[remainder] + ' ';
+                    }
+                } else if (thousands >= 20) {
+                    words += tens[Math.floor(thousands / 10)] + ' ' + ones[thousands % 10] + ' ';
+                } else if (thousands > 0) {
+                    words += ones[thousands] + ' ';
+                }
+                words += 'Thousand ';
+                num = num % 1000;
+            }
+            
+            // Handle hundreds
+            if (num >= 100) {
+                words += ones[Math.floor(num / 100)] + ' Hundred ';
+                num = num % 100;
+            }
+            
+            // Handle tens and ones
+            if (num >= 20) {
+                words += tens[Math.floor(num / 10)] + ' ';
+                num = num % 10;
+            }
+            
+            if (num > 0) {
+                words += ones[num] + ' ';
+            }
+            
+            words += 'Pesos';
+            
+            if (cents > 0) {
+                words += ' and ' + cents + ' Centavos';
+            }
+            
+            return words + ' Only';
+        },
+        async generatePDF(beneficiary) {
+            try {
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                let yPos = 0;
+                
+                // Helper function to add text with word wrap
+                const addText = (text, x, y, maxWidth, fontSize = 10, align = 'left') => {
+                    doc.setFontSize(fontSize);
+                    const lines = doc.splitTextToSize(text, maxWidth);
+                    doc.text(lines, x, y, { align: align });
+                    return y + (lines.length * (fontSize * 0.4));
+                };
+                
+                // Load and add CHED header image
+                try {
+                    const headerUrl = '/img/header.png';
+                    const headerImg = new Image();
+                    headerImg.crossOrigin = 'anonymous';
+                    
+                    await new Promise((resolve, reject) => {
+                        headerImg.onload = () => {
+                            try {
+                                // Add header image to PDF (full width, maintain aspect ratio)
+                                const headerWidth = pageWidth; // Full width
+                                const headerHeight = (headerImg.height / headerImg.width) * headerWidth;
+                                const headerX = 0; // No margin - full width
+                                doc.addImage(headerImg, 'PNG', headerX, yPos, headerWidth, headerHeight);
+                                yPos += headerHeight + 5;
+                                resolve();
+                            } catch (error) {
+                                console.warn('Could not add header to PDF:', error);
+                                resolve(); // Continue without header
+                            }
+                        };
+                        headerImg.onerror = () => {
+                            console.warn('Could not load header image');
+                            resolve(); // Continue without header
+                        };
+                        headerImg.src = headerUrl;
+                    });
+                } catch (error) {
+                    console.warn('Error loading header:', error);
+                }
+                
+                
+                // Date
+                const today = new Date();
+                const dateStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                doc.setFontSize(10);
+                doc.text(dateStr, 20, yPos);
+                yPos += 15;
+                
+                // Recipient Name
+                const fullName = `${beneficiary.first_name || ''} ${beneficiary.middle_name || ''} ${beneficiary.last_name || ''} ${beneficiary.name_ext || ''}`.trim().toUpperCase();
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(11);
+                doc.text(`MS. ${fullName}`, 20, yPos);
+                yPos += 6;
+                
+                // Address
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(10);
+                const address = beneficiary.address || '';
+                yPos = addText(address, 20, yPos, pageWidth - 40);
+                yPos += 8;
+                
+                // Salutation
+                doc.text('Dear ' + (beneficiary.sex === 'Female' ? 'Mrs.' : 'Mr.') + ' ' + (beneficiary.last_name || '') + ':', 20, yPos);
+                yPos += 8;
+                doc.text('Greetings from CHED Caraga!.', 20, yPos);
+                yPos += 10;
+                
+                // Body Paragraph 1
+                doc.setFontSize(10);
+                let bodyText = 'This is to inform you that as per review of records in this Office, you appeared to have been extended with educational assistance through the Study Now Pay Later Program (SNPLP) in accordance with CHED Memorandum Order (CMO) No. 29, series of 2009 with the following details:';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos += 8;
+                
+                // Specific Details
+                doc.setFont(undefined, 'bold');
+                const awardNumber = beneficiary.award_number || 'N/A';
+                const hei = beneficiary.hei || 'N/A';
+                const totalAmortization = beneficiary.disbursement_info?.total_full_amortization || 0;
+                const totalAmortizationWords = this.numberToWords(parseFloat(totalAmortization));
+                
+                doc.setFont(undefined, 'normal');
+                bodyText = `1. SNPLP grantee Award Number ${awardNumber};`;
+                yPos = addText(bodyText, 35, yPos, pageWidth - 40);
+                
+                bodyText = `2. Previously enrolled at ${hei}; and`;
+                yPos = addText(bodyText, 35, yPos, pageWidth - 40);
+                
+                bodyText = `3. Principal loan availed plus interest per annum totaled ${totalAmortizationWords} (P${this.formatCurrency(totalAmortization).replace(/\s/g, '')}).`;
+                yPos = addText(bodyText, 35, yPos, pageWidth - 40);
+                yPos += 6;
+                
+                // Body Paragraph 2
+                bodyText = 'As outlined in Republic Act No. 8545, Section 10(c), any loan granted under this program shall be paid by the student-debtor after completing the course or program, but only after a period of two (2) years from the date of employment. Provided, however, that interest at the rate of not more than six percent (6%) per annum shall accrue on the balance thereof.';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos += 3;
+                
+                bodyText = 'In this regard, we would like to remind you of your financial obligations and you are hereby requested  to please start your payment for the aforementioned loan via the Land Bank of the Philippines (LBP) Link.Biz Portal, noting this important information:';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos += 3;
+                
+                
+                doc.setFont(undefined, 'bold');
+                let merchantNameText = 'Merchant Name: ';
+                let merchantNameWidth = doc.getTextWidth(merchantNameText);
+                doc.text(merchantNameText, 35, yPos);
+                doc.setFont(undefined, 'normal');
+                doc.text('COMMISSION ON HIGHER EDUCATION-CARAGA REGION', 35 + merchantNameWidth, yPos);
+                yPos += 6;
+                
+                doc.setFont(undefined, 'bold');
+                let transactionTypeText = 'Transaction Type: ';
+                let transactionTypeWidth = doc.getTextWidth(transactionTypeText);
+                doc.text(transactionTypeText, 35, yPos);
+                doc.setFont(undefined, 'normal');
+                doc.text(' SNPLP Repayment', 35 + transactionTypeWidth, yPos);
+                yPos += 6;
+                
+                // Documentation
+                bodyText = 'For proper recording and updating, please send us a copy of your proof of payment along with the completed Information Form and Notarized Promissory Note (templates attached) via email to eksalingay@ched.gov.ph or deliver them in person to our office within 15 days upon the receipt of this letter.';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos += 3;
+                
+                // Contact Information
+                bodyText = 'For inquiries and concerns, please call us at our landline (085) 815-3698 or mobile number 0912-089-2045/0948-481-5407 or email us at chedcaragastufaps@ched.gov.ph or send us a message on our facebook page CHED Caraga Scholarships. You can also visit our office located at HEDC Building CSU Main Campus, Ampayon, Butuan City.';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos += 6;
+                
+                // Closing
+                doc.text('Very truly yours,', 20, yPos);
+                yPos += 15;
+                
+                // Signatory
+                doc.setFont(undefined, 'bold');
+                doc.text('NELIA A ALIBIN, PhD', 20, yPos);
+                yPos += 5;
+                doc.setFont(undefined, 'normal');
+                doc.text('Director IV', 20, yPos);
+                yPos += 30;
+                doc.text('Cc: Records/File/ENS', 20, yPos);
+                yPos += 10;
+                
+                // Load and add footer image
+                try {
+                    const footerUrl = '/img/footer.png';
+                    const footerImg = new Image();
+                    footerImg.crossOrigin = 'anonymous';
+                    
+                    await new Promise((resolve, reject) => {
+                        footerImg.onload = () => {
+                            try {
+                                // Calculate footer dimensions to span full width
+                                const footerWidth = pageWidth; // Full width
+                                const footerHeight = (footerImg.height / footerImg.width) * footerWidth;
+                                const footerX = 0; // No margin - full width
+                                const footerY = pageHeight - footerHeight - 10; // Position at bottom with 10px margin
+                                
+                                doc.addImage(footerImg, 'PNG', footerX, footerY, footerWidth, footerHeight);
+                                resolve();
+                            } catch (error) {
+                                console.warn('Could not add footer to PDF:', error);
+                                resolve(); // Continue without footer
+                            }
+                        };
+                        footerImg.onerror = () => {
+                            console.warn('Could not load footer image');
+                            resolve(); // Continue without footer
+                        };
+                        footerImg.src = footerUrl;
+                    });
+                } catch (error) {
+                    console.warn('Error loading footer image:', error);
+                }
+                
+                // Generate filename
+                const filename = `SNPLP_Letter_${beneficiary.award_number || beneficiary.id}_${fullName.replace(/\s+/g, '_')}.pdf`;
+                
+                // Save PDF
+                doc.save(filename);
+                
+                this.$notify({
+                    message: 'PDF generated successfully!',
+                    type: 'success',
+                });
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                this.$notify({
+                    message: 'Error generating PDF. Please try again.',
+                    type: 'error',
+                });
+            }
+        },
         // handleDelete(beneficiary) {
 
         // }
@@ -1071,7 +1776,45 @@
 
     .button-container {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        padding: 4px;
+        align-items: center;
+    }
+    
+    .button-container .el-button {
+        margin: 2px 4px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        min-width: fit-content;
+    }
+    
+    /* Ensure buttons in top toolbar don't get cropped */
+    .row.ml-1.mb-1 {
+        overflow: visible;
+        min-width: 0;
+    }
+    
+    .row.ml-1.mb-1 .el-button,
+    .row.ml-1.mb-1 .el-input {
+        flex-shrink: 0;
+    }
+    
+    /* Prevent button text from being cut off */
+    .el-button--mini {
+        padding: 7px 15px;
+        min-width: auto;
+    }
+    
+    /* Ensure card body doesn't clip content */
+    .card-body {
+        overflow-x: visible;
+    }
+    
+    /* Fix for Actions column buttons */
+    .el-table .button-container {
+        min-width: 100%;
+        overflow: visible;
     }
     .form-container {
         display: flex;

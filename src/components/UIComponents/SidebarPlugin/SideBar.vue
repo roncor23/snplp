@@ -104,8 +104,8 @@ export default {
       if (!isWindows) {
         return;
       }
-      const PerfectScroll = await import("perfect-scrollbar");
-      PerfectScroll.initialize(this.$refs.sidebarScrollArea);
+      const PerfectScrollbar = await import("perfect-scrollbar");
+      new PerfectScrollbar.default(this.$refs.sidebarScrollArea);
     },
   },
   mounted() {

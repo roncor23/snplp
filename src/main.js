@@ -54,7 +54,10 @@ axios.defaults.withCredentials = true;
 
 // axios.defaults.baseURL = 'http://snplp.chedcaraga.test/snplp-database/public/';
 // axios.defaults.baseURL = 'http://192.168.0.151/snplp-database/public/';
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+// For development, use proxy (configured in vue.config.js)
+// Setting baseURL to '/' ensures relative paths like 'api/login' resolve to '/api/login' which the proxy catches
+// For production, set the full backend URL
+axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? 'http://127.0.0.1:8000' : '/';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
 

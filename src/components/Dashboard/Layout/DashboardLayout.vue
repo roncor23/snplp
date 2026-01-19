@@ -76,9 +76,13 @@ export default {
     checkauthentication() {
       console.log("check auth", this.$store.getters.getUser.isAuthenticated);
       if(this.$store.getters.getUser.isAuthenticated) {
-        this.$router.push({ path: '/admin/overview' });
+        if (this.$route.path !== '/admin/overview') {
+          this.$router.push({ path: '/admin/overview' }).catch(() => {});
+        }
       } else {
-        this.$router.push({ path: '/login' });
+        if (this.$route.path !== '/login') {
+          this.$router.push({ path: '/login' }).catch(() => {});
+        }
       }
     },
     toggleSidebar() {

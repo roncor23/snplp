@@ -88,7 +88,7 @@ export default {
         // console.log("check sanctum", response);
         axios
           // .post('http://192.168.0.151/snplp-database/public/api/login', {
-          .post('api/login', {
+          .post('/api/login', {
             email: this.email,
             password: this.password,
           })
