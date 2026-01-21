@@ -57,7 +57,7 @@ axios.defaults.withCredentials = true;
 // For development, use proxy (configured in vue.config.js)
 // Setting baseURL to '/' ensures relative paths like 'api/login' resolve to '/api/login' which the proxy catches
 // For production, set the full backend URL
-axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? 'http://127.0.0.1:8000' : '/';
+axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? 'https://snplp-api.chedcaraga.ph' : '/';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
 
