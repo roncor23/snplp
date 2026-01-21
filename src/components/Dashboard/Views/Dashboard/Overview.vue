@@ -398,24 +398,10 @@
 
       },
        formatAmount(amount) {
-          // Convert the number to a string
-          let strAmount = amount.toString();
+          let num_parts = amount.toString().split(".");
+          num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-          // Split the string into an array of characters
-          let chars = strAmount.split('');
-
-          // Reverse the array to make it easier to insert commas
-          chars.reverse();
-
-          // Iterate over the characters, inserting commas every 3 characters
-          for (let i = 3; i < chars.length; i += 4) {
-            chars.splice(i, 0, ',');
-          }
-
-          // Reverse the array back and join the characters into a string
-          let formattedAmount = chars.reverse().join('');
-
-          return formattedAmount;
+          return num_parts.join(".");
         }
     }
   }

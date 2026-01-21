@@ -973,28 +973,6 @@
             }
            
         },
-        formatNumberWithCommas(number) {
-            // Convert the number to a string
-            var numberString = number.toString();
-
-            // Split the number string into an array of characters
-            var numberArray = numberString.split('');
-
-            // Determine the position to start adding commas
-            var commaPosition = numberArray.length - 3;
-
-            // Iterate over the number array in reverse order and add commas every three digits
-            while (commaPosition > 0) {
-                numberArray.splice(commaPosition, 0, ',');
-                commaPosition -= 3;
-            }
-
-            // Join the number array back into a string
-            var formattedNumber = numberArray.join('');
-
-            // Return the formatted number
-            return formattedNumber;
-            },
         async updateBeneficiary() {
             
             await axios
