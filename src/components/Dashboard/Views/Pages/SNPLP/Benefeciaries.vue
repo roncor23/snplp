@@ -1623,7 +1623,7 @@
                 doc.setFontSize(10);
                 let bodyText = 'This is to inform you that as per review of records in this Office, you appeared to have been extended with educational assistance through the Study Now Pay Later Program (SNPLP) in accordance with CHED Memorandum Order (CMO) No. 29, series of 2009 with the following details:';
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
-                yPos += 8;
+                yPos += 3;
                 
                 // Specific Details
                 doc.setFont(undefined, 'bold');
@@ -1634,14 +1634,14 @@
                 
                 doc.setFont(undefined, 'normal');
                 bodyText = `1. SNPLP grantee Award Number ${awardNumber};`;
-                yPos = addText(bodyText, 35, yPos, pageWidth - 40);
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 
                 bodyText = `2. Previously enrolled at ${hei}; and`;
-                yPos = addText(bodyText, 35, yPos, pageWidth - 40);
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 
                 bodyText = `3. Principal loan availed plus interest per annum totaled ${totalAmortizationWords} (P${this.formatCurrency(totalAmortization).replace(/\s/g, '')}).`;
-                yPos = addText(bodyText, 35, yPos, pageWidth - 40);
-                yPos += 6;
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos += 3;
                 
                 // Body Paragraph 2
                 bodyText = 'As outlined in Republic Act No. 8545, Section 10(c), any loan granted under this program shall be paid by the student-debtor after completing the course or program, but only after a period of two (2) years from the date of employment. Provided, however, that interest at the rate of not more than six percent (6%) per annum shall accrue on the balance thereof.';
@@ -1656,26 +1656,26 @@
                 doc.setFont(undefined, 'bold');
                 let merchantNameText = 'Merchant Name: ';
                 let merchantNameWidth = doc.getTextWidth(merchantNameText);
-                doc.text(merchantNameText, 35, yPos);
+                doc.text(merchantNameText, 20, yPos);
                 doc.setFont(undefined, 'normal');
-                doc.text('COMMISSION ON HIGHER EDUCATION-CARAGA REGION', 35 + merchantNameWidth, yPos);
+                doc.text('COMMISSION ON HIGHER EDUCATION-CARAGA REGION', 20 + merchantNameWidth, yPos);
                 yPos += 6;
                 
                 doc.setFont(undefined, 'bold');
                 let transactionTypeText = 'Transaction Type: ';
                 let transactionTypeWidth = doc.getTextWidth(transactionTypeText);
-                doc.text(transactionTypeText, 35, yPos);
+                doc.text(transactionTypeText, 20, yPos);
                 doc.setFont(undefined, 'normal');
-                doc.text(' SNPLP Repayment', 35 + transactionTypeWidth, yPos);
+                doc.text(' SNPLP Repayment', 20 + transactionTypeWidth, yPos);
                 yPos += 6;
                 
                 // Documentation
-                bodyText = 'For proper recording and updating, please send us a copy of your proof of payment along with the completed Information Form and Notarized Promissory Note (templates attached) via email to eksalingay@ched.gov.ph or deliver them in person to our office within 15 days upon the receipt of this letter.';
+                bodyText = 'For proper recording and updating, please send us a copy of your proof of payment along with the completed Information Form and Notarized Promissory Note (templates attached) via email: eksalingay@ched.gov.ph or personal delivery to CHED Caraga within 15 days upon the receipt of this letter.';
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 yPos += 3;
                 
                 // Contact Information
-                bodyText = 'For inquiries and concerns, please call us at our landline (085) 815-3698 or mobile number 0912-089-2045/0948-481-5407 or email us at chedcaragastufaps@ched.gov.ph or send us a message on our facebook page CHED Caraga Scholarships. You can also visit our office located at HEDC Building CSU Main Campus, Ampayon, Butuan City.';
+                bodyText = 'For inquiries and concerns, please call us at our landline (085) 815-3698 or mobile number 0912-089-2045/0948-481-5407 or email us at chedcaragastufaps@ched.gov.ph or send us a message on ourfacebook page CHED Caraga Scholarships. You can also visit our office located at HEDC Building CSU Main Campus, Ampayon, Butuan City.';
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 yPos += 6;
                 
@@ -1689,7 +1689,7 @@
                 yPos += 5;
                 doc.setFont(undefined, 'normal');
                 doc.text('Director IV', 20, yPos);
-                yPos += 30;
+                yPos += 40;
                 doc.text('Cc: Records/File/ENS', 20, yPos);
                 yPos += 10;
                 
