@@ -61,7 +61,7 @@
         <stats-card type="danger"
                     icon="nc-icon nc-credit-card"
                     small-title="Total Balance"
-                    :title="formatAmount(amortization - amount_paid)">
+                    :title="formatAmount(Math.round((amortization - amount_paid) * 100) / 100)">
           <div class="stats" slot="footer">
             <i class="nc-icon nc-refresh-69"></i>
             Updated now

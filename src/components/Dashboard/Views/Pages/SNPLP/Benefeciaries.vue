@@ -340,7 +340,7 @@
                     <span slot="footer" class="dialog-footer">
                         <p class="text-left font-weight-bold">TOTAL PAYABLE: <span>{{ formatAmount(outstanding_blance) }}</span></p>
                         <p class="text-left font-weight-bold">TOTAL AMOUNT PAID: <span>{{ formatAmount(total_amount_paid) }}</span></p>
-                        <p class="text-left font-weight-bold">OUTSTANDING BALANCE: <span v-if="outstanding_blance > 0">{{ formatAmount(outstanding_blance - Number(total_amount_paid)) }}</span></p>
+                        <p class="text-left font-weight-bold">OUTSTANDING BALANCE: <span v-if="outstanding_blance > 0">{{ formatAmount(Math.round((outstanding_blance - Number(total_amount_paid)) * 100) / 100) }}</span></p>
                         <el-button @click="modalVisiblePaymentTable = false, paymentFlag = false" v-if="!paymentFlag">Close</el-button>
                         <el-button @click="paymentFlag = false" v-if="paymentFlag">Back</el-button>
                         <el-button type="primary" @click="updatePayment" v-if="paymentFlag">Update</el-button>
