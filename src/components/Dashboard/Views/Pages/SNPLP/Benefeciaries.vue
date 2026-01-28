@@ -492,6 +492,24 @@
                         <el-button @click="modalVisibleInterestAll = false">Close</el-button>
                     </div>
                 </el-dialog>
+                <el-dialog title="Confirm Delete Beneficiary" :visible.sync="modalVisibleConfirmDelete" width="400px">
+                    <div style="text-align: center; padding: 20px 0;">
+                        <i class="el-icon-warning" style="font-size: 48px; color: #F56C6C; margin-bottom: 15px;"></i>
+                        <p style="font-size: 16px; margin-bottom: 10px;">
+                            Are you sure you want to delete this beneficiary?
+                        </p>
+                        <p style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #303133;">
+                            {{ selectedBeneficiaryForDelete ? selectedBeneficiaryForDelete.first_name + ' ' + selectedBeneficiaryForDelete.last_name : '' }}
+                        </p>
+                        <p style="font-size: 14px; color: #909399;">
+                            This action cannot be undone. All associated data (payments, statuses, interest calculations) will also be deleted.
+                        </p>
+                    </div>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="modalVisibleConfirmDelete = false">Cancel</el-button>
+                        <el-button type="danger" @click="confirmDeleteBeneficiary">Delete</el-button>
+                    </div>
+                </el-dialog>
                 <el-dialog title="Interest History" :visible.sync="modalVisibleInterestHistory" width="70%">
                     <div v-if="loadingInterestHistory" class="text-center">
                         <i class="el-icon-loading" style="font-size: 24px;"></i>
@@ -724,6 +742,11 @@
                             type="danger"
                             icon="el-icon-document"
                             @click="generatePDF(scope.row)">Generate PDF</el-button>
+                            <el-button
+                            size="mini"
+                            type="danger"
+                            icon="el-icon-delete"
+                            @click="handleDelete(scope.row)">Delete</el-button>
 
                         </div>
                     </template>
@@ -863,6 +886,8 @@
         interestHistory: [],
         loadingInterestHistory: false,
         selectedBeneficiaryForInterest: null,
+        modalVisibleConfirmDelete: false,
+        selectedBeneficiaryForDelete: null,
       }
     },
     computed: {
@@ -1743,9 +1768,48 @@
                 });
             }
         },
-        // handleDelete(beneficiary) {
-
-        // }
+        handleDelete(beneficiary) {
+            this.selectedBeneficiaryForDelete = beneficiary;
+            this.modalVisibleConfirmDelete = true;
+        },
+        async confirmDeleteBeneficiary() {
+            if (!this.selectedBeneficiaryForDelete) return;
+            
+            const beneficiaryId = this.selectedBeneficiaryForDelete.id;
+            this.modalVisibleConfirmDelete = false;
+            
+            try {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                await axios
+                    .post('api/data-del/' + beneficiaryId)
+                    .then((response) => {
+                        this.$notify({
+                            message: response.data.message || 'Beneficiary successfully deleted!',
+                            type: 'success',
+                        });
+                        // Refresh the beneficiaries list
+                        if (this.dropVal == 1 || this.dropVal == 0) {
+                            this.fetchStatus(this.dropVal, this.currentPage);
+                        } else {
+                            this.getBeneficiaries(this.currentPage);
+                        }
+                        this.selectedBeneficiaryForDelete = null;
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        this.$notify({
+                            message: error.response?.data?.message || 'Something went wrong!',
+                            type: 'error',
+                        });
+                    });
+            } catch (error) {
+                console.log(error);
+                this.$notify({
+                    message: 'Error deleting beneficiary. Please try again.',
+                    type: 'error',
+                });
+            }
+        }
     }
   }
 
