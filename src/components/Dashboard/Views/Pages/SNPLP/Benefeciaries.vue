@@ -1644,9 +1644,10 @@
                 
                 // Recipient Name
                 const fullName = `${beneficiary.first_name || ''} ${beneficiary.middle_name || ''} ${beneficiary.last_name || ''} ${beneficiary.name_ext || ''}`.trim().toUpperCase();
+                const title = beneficiary.sex === 'Female' ? 'Mrs.' : 'Mr.';
                 doc.setFont(undefined, 'bold');
                 doc.setFontSize(11);
-                doc.text(`MS. ${fullName}`, 20, yPos);
+                doc.text(`${title} ${fullName}`, 20, yPos);
                 yPos += 6;
                 
                 // Address
