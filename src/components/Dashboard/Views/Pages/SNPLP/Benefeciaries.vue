@@ -1580,9 +1580,27 @@
                 // Helper function to add text with word wrap
                 const addText = (text, x, y, maxWidth, fontSize = 10, align = 'left') => {
                     doc.setFontSize(fontSize);
-                    const lines = doc.splitTextToSize(text, maxWidth);
-                    doc.text(lines, x, y, { align: align });
-                    return y + (lines.length * (fontSize * 0.4));
+                    const lineHeight = fontSize * 0.5; // Better line spacing
+                    
+                    if (align === 'justify') {
+                        // For justify, pass full text string and let jsPDF handle wrapping and justification
+                        // First calculate line count for height
+                        const lines = doc.splitTextToSize(text, maxWidth);
+                        // Render with justify - jsPDF will wrap and justify automatically
+                        doc.text(text, x, y, {
+                            align: 'justify',
+                            maxWidth: maxWidth
+                        });
+                        // Return new y position based on calculated line count
+                        return y + (lines.length * lineHeight);
+                    } else {
+                        // For other alignments, use the standard approach
+                        const lines = doc.splitTextToSize(text, maxWidth);
+                        lines.forEach((line, index) => {
+                            doc.text(line, x, y + (index * lineHeight), { align: align });
+                        });
+                        return y + (lines.length * lineHeight);
+                    }
                 };
                 
                 // Load and add CHED header image
@@ -1647,7 +1665,7 @@
                 // Body Paragraph 1
                 doc.setFontSize(10);
                 let bodyText = 'This is to inform you that as per review of records in this Office, you appeared to have been extended with educational assistance through the Study Now Pay Later Program (SNPLP) in accordance with CHED Memorandum Order (CMO) No. 29, series of 2009 with the following details:';
-                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40, 10, 'justify');
                 yPos += 3;
                 
                 // Specific Details
@@ -1664,44 +1682,46 @@
                 bodyText = `2. Previously enrolled at ${hei}; and`;
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 
-                bodyText = `3. Principal loan availed plus interest per annum totaled ${totalAmortizationWords} (P${this.formatCurrency(totalAmortization).replace(/\s/g, '')}).`;
+                bodyText = `3. Principal loan availed of totaled to ${totalAmortizationWords} (P${this.formatCurrency(totalAmortization).replace(/\s/g, '')}).`;
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 yPos += 3;
                 
                 // Body Paragraph 2
                 bodyText = 'As outlined in Republic Act No. 8545, Section 10(c), any loan granted under this program shall be paid by the student-debtor after completing the course or program, but only after a period of two (2) years from the date of employment. Provided, however, that interest at the rate of not more than six percent (6%) per annum shall accrue on the balance thereof.';
-                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40, 10, 'justify');
                 yPos += 3;
                 
-                bodyText = 'In this regard, we would like to remind you of your financial obligations and you are hereby requested  to please start your payment for the aforementioned loan via the Land Bank of the Philippines (LBP) Link.Biz Portal, noting this important information:';
-                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                bodyText = 'In this regard, we would like to remind you of your financial obligations and you are hereby requested to please start your payment for the aforementioned loan via the Land Bank of the Philippines (LBP) Link.Biz Portal, noting this important information:';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40, 10, 'justify');
                 yPos += 3;
                 
                 
-                doc.setFont(undefined, 'bold');
+                doc.setFont(undefined, 'normal');
                 let merchantNameText = 'Merchant Name: ';
                 let merchantNameWidth = doc.getTextWidth(merchantNameText);
                 doc.text(merchantNameText, 20, yPos);
-                doc.setFont(undefined, 'normal');
+                doc.setFont(undefined, 'bold');
                 doc.text('COMMISSION ON HIGHER EDUCATION-CARAGA REGION', 20 + merchantNameWidth, yPos);
+                doc.setFont(undefined, 'normal');
                 yPos += 6;
                 
-                doc.setFont(undefined, 'bold');
+                doc.setFont(undefined, 'normal');
                 let transactionTypeText = 'Transaction Type: ';
                 let transactionTypeWidth = doc.getTextWidth(transactionTypeText);
                 doc.text(transactionTypeText, 20, yPos);
-                doc.setFont(undefined, 'normal');
+                doc.setFont(undefined, 'bold');
                 doc.text(' SNPLP Repayment', 20 + transactionTypeWidth, yPos);
+                doc.setFont(undefined, 'normal');
                 yPos += 6;
                 
                 // Documentation
                 bodyText = 'For proper recording and updating, please send us a copy of your proof of payment along with the completed Information Form and Notarized Promissory Note (templates attached) via email: eksalingay@ched.gov.ph or personal delivery to CHED Caraga within 15 days upon the receipt of this letter.';
-                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40, 10, 'justify');
                 yPos += 3;
                 
                 // Contact Information
-                bodyText = 'For inquiries and concerns, please call us at our landline (085) 815-3698 or mobile number 0912-089-2045/0948-481-5407 or email us at chedcaragastufaps@ched.gov.ph or send us a message on ourfacebook page CHED Caraga Scholarships. You can also visit our office located at HEDC Building CSU Main Campus, Ampayon, Butuan City.';
-                yPos = addText(bodyText, 20, yPos, pageWidth - 40);
+                bodyText = 'For inquiries and concerns, please call (085) 815-3698 or 0912-089-2045/0948-481-5407; email at chedcaragastufaps@ched.gov.ph; message the facebook page Commission on Higher Education Caraga Regional Office; or visit the office at HEDC Building CSU Main Campus, Ampayon, Butuan City.';
+                yPos = addText(bodyText, 20, yPos, pageWidth - 40, 10, 'justify');
                 yPos += 6;
                 
                 // Closing
