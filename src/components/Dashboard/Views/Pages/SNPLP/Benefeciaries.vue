@@ -1644,7 +1644,7 @@
                 
                 // Recipient Name
                 const fullName = `${beneficiary.first_name || ''} ${beneficiary.middle_name || ''} ${beneficiary.last_name || ''} ${beneficiary.name_ext || ''}`.trim().toUpperCase();
-                const title = beneficiary.sex === 'Female' ? 'Mrs.' : 'Mr.';
+                const title = beneficiary.sex === 'Female' ? 'Ms.' : 'Mr.';
                 doc.setFont(undefined, 'bold');
                 doc.setFontSize(11);
                 doc.text(`${title} ${fullName}`, 20, yPos);
@@ -1658,7 +1658,7 @@
                 yPos += 8;
                 
                 // Salutation
-                doc.text('Dear ' + (beneficiary.sex === 'Female' ? 'Mrs.' : 'Mr.') + ' ' + (beneficiary.last_name || '') + ':', 20, yPos);
+                doc.text('Dear ' + (beneficiary.sex === 'Female' ? 'Ms.' : 'Mr.') + ' ' + (beneficiary.last_name || '') + ':', 20, yPos);
                 yPos += 8;
                 doc.text('Greetings from CHED Caraga!.', 20, yPos);
                 yPos += 10;
