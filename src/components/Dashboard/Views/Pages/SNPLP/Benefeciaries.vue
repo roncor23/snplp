@@ -1572,6 +1572,23 @@
         },
         async generatePDF(beneficiary) {
             try {
+                // Fetch payments to get accurate total amount paid
+                let totalAmountPaid = 0;
+                try {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                    const paymentResponse = await axios.get('api/payment/' + beneficiary.id);
+                    if (paymentResponse.data && paymentResponse.data.data) {
+                        const payments = paymentResponse.data.data;
+                        totalAmountPaid = payments.reduce((sum, payment) => {
+                            return sum + (parseFloat(payment.amount_paid) || 0);
+                        }, 0);
+                    }
+                } catch (error) {
+                    console.warn('Could not fetch payments, using stored value:', error);
+                    // Fallback to stored value if API call fails
+                    totalAmountPaid = parseFloat(beneficiary.repayment_info?.total_amount_paid || 0);
+                }
+                
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
                 const pageHeight = doc.internal.pageSize.getHeight();
@@ -1673,8 +1690,9 @@
                 doc.setFont(undefined, 'bold');
                 const awardNumber = beneficiary.award_number || 'N/A';
                 const hei = beneficiary.hei || 'N/A';
-                const totalAmortization = beneficiary.disbursement_info?.total_full_amortization || 0;
-                const totalAmortizationWords = this.numberToWords(parseFloat(totalAmortization));
+                const totalAmortization = parseFloat(beneficiary.disbursement_info?.total_full_amortization || 0);
+                const outstandingBalance = Math.max(0, totalAmortization - totalAmountPaid);
+                const outstandingBalanceWords = this.numberToWords(outstandingBalance);
                 
                 doc.setFont(undefined, 'normal');
                 bodyText = `1. SNPLP grantee Award Number ${awardNumber};`;
@@ -1683,7 +1701,7 @@
                 bodyText = `2. Previously enrolled at ${hei}; and`;
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 
-                bodyText = `3. Principal loan availed of totaled to ${totalAmortizationWords} (P${this.formatCurrency(totalAmortization).replace(/\s/g, '')}).`;
+                bodyText = `3. Principal loan outstanding balance totaled to ${outstandingBalanceWords} (P${this.formatCurrency(outstandingBalance).replace(/\s/g, '')}).`;
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40);
                 yPos += 3;
                 
