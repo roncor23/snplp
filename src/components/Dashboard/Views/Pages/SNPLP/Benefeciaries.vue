@@ -1789,6 +1789,7 @@
                 
                 // Body Paragraph 1
                 doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
                 let bodyText = 'This is to inform you that as per review of records in this Office, you appeared to have been extended with educational assistance through the Study Now Pay Later Program (SNPLP) in accordance with CHED Memorandum Order (CMO) No. 29, series of 2009 with the following details:';
                 yPos = addText(bodyText, 20, yPos, pageWidth - 40, 10, 'justify');
                 yPos += 3;
