@@ -1781,9 +1781,10 @@
                 doc.setFont(undefined, 'bold');
                 doc.text(title, 20 + dearWidth, yPos);
                 const titleWidth = doc.getTextWidth(title);
-                doc.setFont(undefined, 'normal');
+                doc.setFont(undefined, 'bold');
                 doc.text(' ' + (beneficiary.last_name || '').toUpperCase() + ':', 20 + dearWidth + titleWidth, yPos);
                 yPos += 8;
+                doc.setFont(undefined, 'normal');
                 doc.text('Greetings from CHED Caraga!', 20, yPos);
                 yPos += 10;
                 
