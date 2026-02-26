@@ -642,15 +642,21 @@
                         size="mini"
                         icon="el-icon-download"
                         @click="exportToCSV" type="success" :loading="exporting">Export CSV</el-button>
-                    <el-button
+                    <!-- <el-button
                         class="ml-2"
                         size="mini"
                         icon="el-icon-calculator"
-                        @click="calculateInterestForAll" type="warning" :loading="calculatingAll">Calculate Interest (All)</el-button>
+                        @click="calculateInterestForAll" type="warning" :loading="calculatingAll">Calculate Interest (All)</el-button> -->
                 </template>
             </div>
             <el-table v-loading="loading" element-loading-text="Loading data..." :data="tableData"  :lazy="true" border>
                 <!-- <el-table-column label="Id" property="id" width="50"></el-table-column> -->
+                <el-table-column label="Total Amount Paid" width="200">
+                    <template v-slot="{row}"> 
+                        <p class="text-right">{{ addComma(getTotalAmountPaid(row.id)) }}</p>
+                    </template>
+                </el-table-column>
+                 <el-table-column label="Award #" property="award_number" width="200"></el-table-column>
                 <el-table-column label="Last Name" property="last_name" width="200"></el-table-column>
                 <el-table-column label="Maiden Name" property="maiden_name" width="200"></el-table-column>
                 <el-table-column label="First Name" property="first_name" width="200"></el-table-column>
@@ -695,11 +701,6 @@
                 <!-- <el-table-column label="Date Paid" property="repayment_info.date_paid" width="200"></el-table-column>
                 <el-table-column label="Amount Paid" property="repayment_info.amount_paid" width="200"></el-table-column>
                 <el-table-column label="Confirmation Number" property="repayment_info.confirmation_number" width="220"></el-table-column> -->
-                <el-table-column label="Total Amount Paid" width="200">
-                    <template v-slot="{row}"> 
-                        <p class="text-right">{{ addComma(row.repayment_info.total_amount_paid) }}</p>
-                    </template>
-                </el-table-column>
                 <el-table-column
                     label="Actions"
                     width="800"
@@ -888,6 +889,7 @@
         selectedBeneficiaryForInterest: null,
         modalVisibleConfirmDelete: false,
         selectedBeneficiaryForDelete: null,
+        paymentTotalsCache: {}, // Cache to store total amount paid for each beneficiary
       }
     },
     computed: {
@@ -939,21 +941,29 @@
 
             return num_parts.join(".");
         },
-        searchBenificiaries() {
+        async searchBenificiaries() {
             this.loading = true;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
-            axios
-                .get('api/search-beneficiaries/' + this.search)
-                .then((response) => {
-
-                    console.log("check search data", response.data);
-                    this.tableData = response.data;
-                    this.loading = false;
-                })
-                .catch((response) => {
-                    console.log(response);
-                    alert('Something went wrong!');
+            try {
+                const response = await axios.get('api/search-beneficiaries/' + this.search);
+                console.log("check search data", response.data);
+                this.tableData = response.data;
+                
+                // Initialize cache with repayment_info values as fallback
+                this.tableData.forEach(beneficiary => {
+                    const fallbackTotal = beneficiary.repayment_info?.total_amount_paid || 0;
+                    this.$set(this.paymentTotalsCache, beneficiary.id, fallbackTotal);
                 });
+                
+                // Fetch and cache actual payment totals for search results
+                await this.fetchPaymentTotalsForPage();
+                
+                this.loading = false;
+            } catch (response) {
+                console.log(response);
+                alert('Something went wrong!');
+                this.loading = false;
+            }
         },
         addComma(amount) {
             if(amount == null) {
@@ -964,26 +974,35 @@
 
             return num_parts.join(".");
         },
-        fetchStatus(val, page) {
+        async fetchStatus(val, page) {
             page = this.currentPage;
             this.loading = true;
             this.dropVal = val;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
-            axios
-                .get('api/status-data/' + Number(val) + '/' + Number(page))
-                .then((response) => {
-                    this.tableData = response.data.data;
-                    this.totalPage = response.data.meta.total;
-                    this.totalAmountPaid = response.data.totalSumPaid;
-                    this.totalBalance = response.data.totalSumBalance;
-                    this.beneficiariesCount = response.data.beneficiariesCount;
-                    console.log("check tableData", this.tableData);
-                    this.loading = false;
-                })
-                .catch((response) => {
-                    console.log(response);
-                    alert('Something went wrong!');
+            try {
+                const response = await axios.get('api/status-data/' + Number(val) + '/' + Number(page));
+                this.tableData = response.data.data;
+                this.totalPage = response.data.meta.total;
+                this.totalAmountPaid = response.data.totalSumPaid;
+                this.totalBalance = response.data.totalSumBalance;
+                this.beneficiariesCount = response.data.beneficiariesCount;
+                console.log("check tableData", this.tableData);
+                
+                // Initialize cache with repayment_info values as fallback
+                this.tableData.forEach(beneficiary => {
+                    const fallbackTotal = beneficiary.repayment_info?.total_amount_paid || 0;
+                    this.$set(this.paymentTotalsCache, beneficiary.id, fallbackTotal);
                 });
+                
+                // Fetch and cache actual payment totals for all beneficiaries on this page
+                await this.fetchPaymentTotalsForPage();
+                
+                this.loading = false;
+            } catch (response) {
+                console.log(response);
+                alert('Something went wrong!');
+                this.loading = false;
+            }
 
             // After successful addition, close the modal and reset the form
             this.modalVisible = false;
@@ -1037,13 +1056,18 @@
             this.modalVisible = false;
         },
         async addPayment() {
+            const personalId = this.payment.personal_id;
             await axios
                 .post('api/payment', this.payment)
-                .then((response) => {
+                .then(async (response) => {
                     this.$notify({
                         message: 'Payment successfully added!',
                         type: 'success',
                     });
+                    // Refresh payment total for this beneficiary
+                    if (personalId) {
+                        await this.refreshPaymentTotal(personalId);
+                    }
                     this.payment = {};
                     // this.getBeneficiaries();
                 })
@@ -1074,24 +1098,91 @@
             // After successful addition, close the modal and reset the form
             this.modalVisibleStatuses = false;
         },
-        getBeneficiaries(page) {
+        async getBeneficiaries(page) {
             this.loading = true;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
-            axios
-                .get('api/data/' + page)
-                .then((response) => {
-                    this.tableData = response.data.data;
-                    this.totalPage = response.data.meta.total;
-                    console.log("check tableData", this.tableData);
-                    this.loading = false;
-                })
-                .catch((response) => {
-                    console.log(response);
-                    alert('Something went wrong!');
+            try {
+                const response = await axios.get('api/data/' + page);
+                this.tableData = response.data.data;
+                this.totalPage = response.data.meta.total;
+                console.log("check tableData", this.tableData);
+                
+                // Initialize cache with repayment_info values as fallback
+                this.tableData.forEach(beneficiary => {
+                    const fallbackTotal = beneficiary.repayment_info?.total_amount_paid || 0;
+                    this.$set(this.paymentTotalsCache, beneficiary.id, fallbackTotal);
                 });
+                
+                // Fetch and cache actual payment totals for all beneficiaries on this page
+                await this.fetchPaymentTotalsForPage();
+                
+                this.loading = false;
+            } catch (response) {
+                console.log(response);
+                alert('Something went wrong!');
+                this.loading = false;
+            }
 
             // After successful addition, close the modal and reset the form
             this.modalVisible = false;
+        },
+        async fetchPaymentTotalsForPage() {
+            // Fetch payment totals for all beneficiaries on the current page
+            const promises = this.tableData.map(async (beneficiary) => {
+                try {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                    const paymentResponse = await axios.get('api/payment/' + beneficiary.id);
+                    if (paymentResponse.data && paymentResponse.data.data) {
+                        const payments = paymentResponse.data.data;
+                        // Use the same calculation logic as getPaymentsPerBeneficiary
+                        let len = payments.length;
+                        let sum = 0;
+                        for(let i = 0; i < len; i++) {
+                            sum += Number(payments[i].amount_paid || 0);
+                        }
+                        // Use Vue.set for reactivity
+                        this.$set(this.paymentTotalsCache, beneficiary.id, sum);
+                    } else {
+                        this.$set(this.paymentTotalsCache, beneficiary.id, 0);
+                    }
+                } catch (error) {
+                    console.warn(`Could not fetch payments for beneficiary ${beneficiary.id}:`, error);
+                    this.$set(this.paymentTotalsCache, beneficiary.id, 0);
+                }
+            });
+            
+            await Promise.all(promises);
+        },
+        getTotalAmountPaid(beneficiaryId) {
+            // Return cached total if available
+            if (this.paymentTotalsCache[beneficiaryId] !== undefined) {
+                return this.paymentTotalsCache[beneficiaryId];
+            }
+            // Return 0 if not in cache yet (will be updated when fetchPaymentTotalsForPage completes)
+            return 0;
+        },
+        async refreshPaymentTotal(beneficiaryId) {
+            // Refresh payment total for a specific beneficiary
+            try {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${this.$store.state.user.token}`;
+                const paymentResponse = await axios.get('api/payment/' + beneficiaryId);
+                if (paymentResponse.data && paymentResponse.data.data) {
+                    const payments = paymentResponse.data.data;
+                    // Use the same calculation logic as getPaymentsPerBeneficiary
+                    let len = payments.length;
+                    let sum = 0;
+                    for(let i = 0; i < len; i++) {
+                        sum += Number(payments[i].amount_paid || 0);
+                    }
+                    // Use Vue.set for reactivity
+                    this.$set(this.paymentTotalsCache, beneficiaryId, sum);
+                } else {
+                    this.$set(this.paymentTotalsCache, beneficiaryId, 0);
+                }
+            } catch (error) {
+                console.warn(`Could not refresh payment total for beneficiary ${beneficiaryId}:`, error);
+                this.$set(this.paymentTotalsCache, beneficiaryId, 0);
+            }
         },
         async getPaymentsPerBeneficiary(id) {
 
@@ -1161,13 +1252,17 @@
         async deletePayment(payment) {
             await axios
                 .post('api/payment-del/' + payment.id)
-                .then((response) => {
+                .then(async (response) => {
                     this.$notify({
                         message: response.data.message,
                         type: 'success',
                     });
                     console.log("check response", response);
-                    this.getPaymentsPerBeneficiary(payment.personal_id); 
+                    this.getPaymentsPerBeneficiary(payment.personal_id);
+                    // Refresh payment total for this beneficiary
+                    if (payment.personal_id) {
+                        await this.refreshPaymentTotal(payment.personal_id);
+                    }
  
                 })
                 .catch((response) => {
@@ -1188,14 +1283,19 @@
             this.statusFlag = true;
         },
        async updatePayment() {
+            const personalId = this.payment.personal_id;
             await axios
                 .post('api/payment/' + this.payment.id, this.payment)
-                .then((response) => {
+                .then(async (response) => {
                     this.$notify({
                         message: 'Payment successfully updated!',
                         type: 'success',
                     });
-                    this.getPaymentsPerBeneficiary(this.payment.personal_id); 
+                    this.getPaymentsPerBeneficiary(personalId);
+                    // Refresh payment total for this beneficiary
+                    if (personalId) {
+                        await this.refreshPaymentTotal(personalId);
+                    }
                     this.paymentFlag = false;
                     this.payment = {};
                 })
@@ -1675,9 +1775,16 @@
                 yPos += 8;
                 
                 // Salutation
-                doc.text('Dear ' + (beneficiary.sex === 'Female' ? 'Ms.' : 'Mr.') + ' ' + (beneficiary.last_name || '') + ':', 20, yPos);
+                doc.setFont(undefined, 'normal');
+                doc.text('Dear ', 20, yPos);
+                const dearWidth = doc.getTextWidth('Dear ');
+                doc.setFont(undefined, 'bold');
+                doc.text(title, 20 + dearWidth, yPos);
+                const titleWidth = doc.getTextWidth(title);
+                doc.setFont(undefined, 'normal');
+                doc.text(' ' + (beneficiary.last_name || '') + ':', 20 + dearWidth + titleWidth, yPos);
                 yPos += 8;
-                doc.text('Greetings from CHED Caraga!.', 20, yPos);
+                doc.text('Greetings from CHED Caraga!', 20, yPos);
                 yPos += 10;
                 
                 // Body Paragraph 1
@@ -1722,7 +1829,7 @@
                 doc.setFont(undefined, 'bold');
                 doc.text('COMMISSION ON HIGHER EDUCATION-CARAGA REGION', 20 + merchantNameWidth, yPos);
                 doc.setFont(undefined, 'normal');
-                yPos += 6;
+                yPos += 4;
                 
                 doc.setFont(undefined, 'normal');
                 let transactionTypeText = 'Transaction Type: ';
